@@ -1,4 +1,4 @@
-# Calculation examples and considerations
+
 这个 tutorial 将以[汪老师文章][wang] Si bulk 中单个 Al 原子替换一个 Si 原子的 $Si_{Al}$ 作为例子, 本章会以它作为具体例子演示计算流程并提示注意事项. 
 
 ## 1.为 potential patch 准备晶体结构和势场文件
