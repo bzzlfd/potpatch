@@ -29,11 +29,10 @@ classifiers = [
 keywords = ["physics", "materials", "science", "semiconductor", "defect level", "potentail patch", "DFT", "PWmat"]
 
 [project.urls]
-#Homepage = ""
-#Documentation = ""
-#Repository = ""
-#Issues = ""
-#Changelog = ""
+Homepage = "https://github.com/bzzlfd/potpatch"
+Documentation = "https://github.com/bzzlfd/potpatch/tree/main/doc"
+Repository = "https://github.com/bzzlfd/potpatch/"
+Issues = "https://github.com/bzzlfd/potpatch/issues"
 
 [project.scripts]
 potpatch = "potpatch.__main__:main"
