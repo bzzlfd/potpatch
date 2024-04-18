@@ -23,7 +23,7 @@ size          = [4, 4, 4]   # size based on bulk
 size            = [8, 8, 8]
 atomconfig      = "./3.escan/2.supercell_08a/atom.config"
 vr              = "./3.escan/2.supercell_08a/IN.VR"
-#vr_nnodes       = 2         # not necessary, may be
+#vr_nnodes       = 2         # not needed, may be
 
 
 

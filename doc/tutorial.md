@@ -1,27 +1,27 @@
 # Calculation examples and considerations
-这个例子将以汪老师文章中 Si_Al 作为例子, 它在VBM之上 演示计算流程, 注意事项
+这个 tutorial 将以[汪老师文章][wang] Si bulk 中单个 Al 原子替换一个 Si 原子的 $Si_{Al}$ 作为例子, 本章会以它作为具体例子演示计算流程并提示注意事项. 
+
 ## 1.为 potential patch 准备晶体结构和势场文件
-需要提前准备的晶体结构文件只有 bulk 晶体结果文件. 
-如果计算需要开 SOC, 可以从本步骤使用 SOC 的赝势, 等 patch 之后 Escan 计算再开 SOC. shallow level 对结构影响不大, 这一步开 SOC 与否不会有很大影响, 当然你在这里就打开 SOC 也没有什么问题. 
+需要提前准备的文件只有 bulk 晶体结果文件. 
+如果你在进行一个需要开 SOC 的计算, 可以从本步骤开始使用 SOC 的赝势, 等 patch 之后 Escan 计算再开 SOC. shallow level 对结构影响不大, 这一步开 SOC 与否不会有很大影响, 当然你在这里就打开 SOC 也没有什么问题. 
 
 ### 1.1.2 LDA bulk scf
 准备 bulk SCF 计算的输入文件, 进行自洽计算.
 
 `etot.input` considerations:
-1. `N123`: 计算输出势场文件 `OUT.VR` 实际上是一个实空间3维离散网格, 网格数由 晶格常数, `Ecut` 和并行参数 共同影响. 为了后续 patch 过程中网格匹配, 我非常建议在这里显式地设置 `N123`. 你可以看看[这篇笔记](./Ecut_n123_AL.md)进一步了解晶格常数, `Ecut` 和 `N123` 的关系. 
+1. `N123`: 计算输出势场文件 `OUT.VR` 实际上存储了一个实空间3维离散网格, 网格数由 晶格常数, `Ecut` 和并行参数 共同影响. 为了后续 patch 过程中网格匹配, 我非常建议在这里显式地设置 `N123`. 你可以看看[这篇笔记](./Ecut_n123_AL.md)进一步了解晶格常数, `Ecut2` 和 `N123` 的关系. 
 2. `XCFUNCTIONAL`: 建议采用 `XCFUNCTIONAL = LDA` , PBE泛函会让势场出现很多小锯齿, 这不利于potentail patch. 相应的, 赝势也建议用 LDA 赝势.
-3. `CONVERGENCE`: 非常建议设置 `CONVERGENCE=DIFFICULT`, 这样生成的势场在[康老师文章][1] Fig3 检查中符合得更好. 
+3. `CONVERGENCE`: 非常建议设置 `CONVERGENCE=DIFFICULT`, 这样生成的势场在[康老师文章][kang] Fig3 检查中符合得更好. 
 4. `OUT.VATOM`: 建议打开 `OUT.VATOM`, 这是一会儿 (调整赝势环节) 要用到的米奇妙妙工具. 
 5. `OUT.WG`: 如果你认为波函数文件 `OUT.WG` 没用的话可以设置取消输出它以节省硬盘空间. 
 
 这个例子需要计算VBM, 考虑是否进行非自洽计算得到bulk的VBM, 但是Si的VBM在Gamma点, 自洽计算已经取到了, 可以用 `Gap_Read` 读取
 
-[1]: https://doi.org/10.1103/PhysRevApplied.18.064001
 
 ### 1.2.1 LDA supercell relax
 从1.1中使用的 atom.config 制作supercell的晶体结果文件, 进行弛豫计算. 
 
-相较于普通的制作超胞, 这里为了 potential patching 效果需要额外固定弛豫时在 patching 边界位置的原子, `potpatch` 程序提供了一个小程序 `potpatch mksupcl` 帮助完成这件事. `example/potpatch.input` 中有控制 mksupcl 行为的参数, 使用 `potpatch mksupcl -i INPUT` 告诉 `potpatch mksupcl` 去哪里找 `INPUT`(在这个例子中, 即`example/potpatch.input`) 文件, [这里](./note_potpatch.md)有关于 `potpatch mksupcl` 的解释. 
+相较于普通的制作超胞, 这里为了 potential patching 效果需要额外固定弛豫时在 patching 边界位置的原子, `potpatch` 程序提供了一个小程序 `potpatch mksupcl` 帮助完成这件事. `example/potpatch.input` 中有控制 mksupcl 行为的参数, 使用 `potpatch mksupcl -i INPUT` 告诉 `potpatch mksupcl` 去哪里找 `INPUT`(在这个例子中, 即`example/potpatch.input`) 文件, [note_potpatch](./note_potpatch.md) 处有关于 `potpatch mksupcl` 的解释. 
 
 关于超胞尺寸, 经验上 (对这个正方体lattice例子) 使用 4×4×4 超胞就足够满足需求了. 它的原子位置基本不受带电杂质的影响, 它的势场相较于bulk只剩下带电杂质产生的库伦势. 请做自己的检查. 
 
@@ -41,7 +41,6 @@ supercell的自洽和bulk的自洽在 `etot.input` 没有很大的区别
  1. `N123`: 因为这个例子使用  4×4×4 超胞, 相应的 `N123 = 128 128 128`
  2. `IN.PSP`, `NUM_ELECTRON`, `MP_N123`: 和上一步弛豫一样
 
-综合两个计算的 VBM, CBM 确定一个参考能级 $\varepsilon_{ref}$, 让 $(\hat{H}-\varepsilon_{ref})^2$ 的第一个能量本征值是缺陷能级. 一个可选的建议是让 $\varepsilon_{ref}$ 尽量远离缺陷能级, 可以让计算收敛更快. 
 
 
 ## 2. HSE计算
@@ -57,7 +56,7 @@ HSE 相对 LDA 的计算, 只需要把 `XCFUNCTIONAL` 改成 `XCFUNCTIONAL = HSE
 ### 3.0 potpatch
 `potpatch`程序的实现中, 在 patch 前后, (假设) 杂质原子一直位于 [0,0,0] 坐标, 这是为什么之前把杂质原子设置在最靠近 [0,0,0] 的位置. 
 直接执行 `potpatch -i INPUT` 即开始 potentail patching 过程, `INPUT` 是告诉 `potpatch` 程序它需要的信息的文件. 本例子中是 `example/potpatch.input` 文件. 这个文件参数很简单, 应该看一下就知道应该怎么用了. 
-[这里](./note_potpatch.md)有关于 `potpatch` 程序和输入文件的文档. 
+[note_potpatch](./note_potpatch.md) 处有关于 `potpatch` 程序和输入文件的文档. 
 
 ### 3.1 LDA bulk Escan
 这个计算设置基于普通的 nonscf job, 同样需要准备 `atom.config` 和 `IN.VR`, 这是 bulk 计算, 直接从 LDA bulk scf 当中复制过来就行了. 
@@ -72,35 +71,35 @@ HSE 相对 LDA 的计算, 只需要把 `XCFUNCTIONAL` 改成 `XCFUNCTIONAL = HSE
 
 `IN.NONSCF`
 1. `NONSCF_METH = 2`: 执行 FSM 计算
-2. `FSM_EREF`: 可以在第一节 LDA scf 计算之后用 `Gap_Read` 参考 VBM CBM, 设置一个使 FSM 计算到的第一个能级就是 VBM 的值. 
+2. `FSM_EREF`: 可以在第一节 LDA scf 计算之后用 `Gap_Read` 参考 VBM CBM, 设置一个使 FSM 中 $(\hat{H}-\varepsilon_{ref})^2$ 的第一个能级就是 VBM 的值. 
+   1. 想让 FSM 算出的第一个能级是 VBM 是因为 $Si_{Al}$ 的 shallow level 位于 VBM 附近. 
+   2. 一个可选的建议是让 $\varepsilon_{ref}$ 尽量远离 VBM , 可以让计算收敛得更快. 
 
 `IN.KPT`:
-1. Si 的 VBM 在 Gamma 点, 我们在 `IN.KPT` 文件中设置我们要进行 Gamma 点的非自洽计算. 
-
-按道理说这一步的结果应该和之前不用 Escan 算出来的结果一致. 
+1. Si 的 VBM 在 $\Gamma$ 点, 我们在 `IN.KPT` 文件中设置我们要进行 $\Gamma$ 点的非自洽计算. 
 
 bulk 计算的 `atom.config` 和 `IN.VR` 文件来自 LDA bulk scf 计算, 它并不需要使用 `potpatch` 程序.
 
+按道理说这一步的结果应该和之前 bulk 自洽计算算出来的结果一致. 
 
 ### 3.2 LDA suuuupercell Escan
 `etot.input`, `IN.NONSCF`, `IN.KPT` 设置与 bulk 计算差别不大, 只需要新增杂质元素的赝势; 根据 patch 后尺寸设置 `N123` 就可以了. 
 
-Escan 的 `atom.config` 和 `IN.VR` 文件通过 `potpatch` 程序生成. 让我们编写 `potpatch` 程序的参数文件吧. 本例子提供了 `potpatch.input` 模板文件, 好了我们编写完了(没有).
+Escan 的 `atom.config` 和 `IN.VR` 文件通过 `potpatch` 程序生成. 让我们编写 `potpatch` 程序的控制文件吧. 本例子提供了 `potpatch.input` 模板文件, 好了我们编写完了(没有).
 
 控制 `potpatch` 主程序的参数在 `[potpatch]` 这个  header 之下. 
 1. `[potpatch.bulk]` 和 `[potpatch.supercell]` 控制输入 `potpatch` 的信息, 包含供 patch 的 bulk 和 supercell 晶体结构 和 势场 文件相对于 `potpatch.input` 文件的位置; 
-2. supercell带电情况 `charge` , 它被定义为计算supercell时 PWmat 中 `(setting NUM_ELECTRON) - (default NUM_ELECTRON)` 得到的数值; 
+2. supercell带电情况 `charge` , 它被定义为计算supercell时 PWmat 中 `(setting NUM_ELECTRON) - (default NUM_ELECTRON)` 得到的数值. 在本例子中 `charge = 2048-2047 = 1`
 3. 以及该体系的介电常数 `epsilon` , 在本例子中, Si 的相对介电常数是12.34. `[potpatch.supercell]` 下的 `frozen_range` 和 `size` 两个参数与 `mksupcl` 中的概念一样, 不需要设置它们 `potpatch` 也会正常工作, 单独设计这两个参数的原因是, supercell 不一定是 `potpatch mksupcl` 生成的, 这些参数帮助用户确认在 `potpatch` 执行过程中 supercell 与用户预期的一致. 
-   1. 你也可以使用 `potpatch --only-inspect` 打印更多从 `potpatch.input` 中读入的信息并在程序开始执行 potentail patch 前终止. 
+   1. 你也可以使用 `potpatch --only-inspect` 打印更多 `potpatch` 程序目前了解到的信息, 并在程序开始执行 potentail patch 前终止. 
 4. `[potpatch.output]` 控制 `potpatch` 程序输出的信息, 包括 `atom.config` 和 `VR` 文件名, 和想要 patch 生成的 suuuupercell 的尺寸. 
 
-[这里](./note_potpatch.md)有 `potpatch` 程序和输入文件的文档. 
+[note_potpatch](./note_potpatch.md) 处有 `potpatch` 程序和输入文件的文档. 
 
 在 `potpatch` 运行过程中, 会有一些输出, 它们可以帮助你判断 potential patching 是否出错了. "standard deviation of diffs at the boundary" 通常只有 几meV, 如果它太大请小心, 考虑使用更大的 supercell 以及检查之前的计算是否含有错误. 
 
 当 suuuupercell 尺寸是 8a 时计算得到的 ionization energy 的结果是 81.25meV, 很接近[汪老师文章][wang]中的 80.1 meV, 计算在两张1080ti上花了6分钟. 大成功.
 
-[wang]: https://doi.org/10.1063/1.3153981
 
 ## 4.修正赝势
 为了在 LDA 下算准, 接下来做的是调整杂质附近原子的赝势, 让 $E_{\mathrm{im}}^{\mathrm{LDA}+\mathrm{C}}\left(\Omega_{512}\right)$ 变化, 使得下式成立. 
@@ -113,3 +112,8 @@ $$
 这里有一个细节, 实际上这四个 eigenvalue 并不是在同一基准上的, 这是为什么我们一开始计算的时候打开了 `OUT.VATOM`, 我们需要从 `OUT.VATOM` 中获取信息, 把离杂质最远的原子处的势场当做四个体系的基准, 修正上面的公式. 
 
 这个例子没有做有效质量的修正是因为在修正之前已经符合得很好了, 请做自己的检查. 
+
+
+
+[wang]: https://doi.org/10.1063/1.3153981
+[kang]: https://doi.org/10.1103/PhysRevApplied.18.064001
