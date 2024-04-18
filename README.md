@@ -66,3 +66,7 @@ potential patching
 folded spectrum method (FSM)
 
 1. [Wang L W, Zunger A. Solving Schrödinger’s equation around a desired energy: Application to silicon quantum dots[J]. The Journal of Chemical Physics, 1994, 100(3): 2394-2397.](https://doi.org/10.1063/1.466486)
+
+##
+
+这真的是一个 python project, 信我啊
