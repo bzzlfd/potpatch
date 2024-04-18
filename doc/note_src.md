@@ -113,6 +113,7 @@ V_C(\mathbf{r})=\sum_{(i, j, k) \neq(0,0,0)} \frac{1}{\varepsilon \mid \mathbf{r
 $$
 
 `patch.py` 的工作是纯纯的 patch , 使得
+
 $$
 V_{\mathrm{im}}(\mathbf{r})=\left\{\begin{array}{lr}
 V_{\mathrm{im}}^{\mathrm{SC}}(\mathbf{r}), & \mathbf{r} \in \Omega_{512} \\
@@ -124,14 +125,19 @@ $$
 
 `gen_charge_correct` 根据 supercell 材料信息和这个函数其中内置的电荷密度分布函数生成两个函数, `minus_V_periodic` 和 `plus_V_single`. 也用 `gen_` 的方式保证了 `minus_V_periodic` 和 `plus_V_single` 用的是同一个电荷密度分布. 
 `minus_V_periodic` 的工作是处理 supercell VR mesh , 它对这个势场减去
+
 $$
 V_{periodic}(\mathbf{r})=\sum_{(i, j, k) } \frac{1}{\varepsilon \mid \mathbf{r}-\left(i \mathbf{L}_1+j \mathbf{L}_2+k \mathbf{L}_3 \mid\right)}
 $$
+
 `plus_V_single` 的工作是处理 suuuupercell VR mesh, 它对势场加上
+
 $$
 V_{single} = 1 / \varepsilon r
 $$
+
 二者合起来就是
+
 $$
 \left\{\begin{array}{lr}
 -V_C(\mathbf{r}), & \mathbf{r} \in \Omega_{512} \\
@@ -145,9 +151,11 @@ sinc(r/R_0), & r \lt R_0 \\
 0 . & r \ge R_0 .
 \end{array}\right.
 $$
+
 球对称电荷密度分布, 它的归一化形式以及单个该电荷密度分布产生的势场的解析形式可以在代码中找到,
 
 `edge_match_correct` 函数做的工作是
+
 $$
 \left\{\begin{array}{lr}
 +V_{\text {align }}, & \mathbf{r} \in \Omega_{512} \\
