@@ -1,5 +1,5 @@
 
-这个 tutorial 将以[汪老师文章][wang] Si bulk 中单个 Al 原子替换一个 Si 原子的 $Si_{Al}$ 作为例子, 本章会以它作为具体例子演示计算流程并提示注意事项. 
+这个 tutorial 将以[汪老师文章][wang] Si bulk 中单个 Al 原子替换一个 Si 原子的 $Si_{Al}$ 作为具体例子演示计算流程并提示注意事项. 
 
 ## 1.为 potential patch 准备晶体结构和势场文件
 需要提前准备的文件只有 bulk 晶体结果文件. 
@@ -98,7 +98,7 @@ Escan 的 `atom.config` 和 `IN.VR` 文件通过 `potpatch` 程序生成. 让我
 
 在 `potpatch` 运行过程中, 会有一些输出, 它们可以帮助你判断 potential patching 是否出错了. "standard deviation of diffs at the boundary" 通常只有 几meV, 如果它太大请小心, 考虑使用更大的 supercell 以及检查之前的计算是否含有错误. 
 
-当 suuuupercell 尺寸是 8a 时计算得到的 ionization energy 的结果是 81.25meV, 很接近[汪老师文章][wang]中的 80.1 meV, 计算在两张1080ti上花了6分钟. 大成功.
+当 suuuupercell 尺寸是 8a 时计算得到的 binding energy 的结果是 81.25meV, 很接近[汪老师文章][wang]中的 80.1 meV, 计算在两张1080ti上花了6分钟. 大成功.
 
 
 ## 4.修正赝势
