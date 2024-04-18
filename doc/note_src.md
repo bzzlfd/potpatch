@@ -8,10 +8,10 @@
 ## 一些你可能好奇的问题
 在阅读之前你可能在好奇一些问题, 这一节汇总这些问题并建议你去阅读下面的哪一部分. 
 
-[为什么我安装之后会有一个 `potpatch` 命令, 它是如何工作的](#入口文件)
-[实现 potentail patch 的关键代码在哪里?](#potential-patching-的关键)
-[代码结构是什么样, 我开发时应该注意什么](#代码结构)
-[`OUT.VR`, `atom.config` 中都有 `Lattice` 变量, 如何在 `MaterialSystemInfo` 中保持一致性](#objects)
+1. [为什么我安装之后会有一个 `potpatch` 命令, 它是如何工作的](#入口文件)
+2. [实现 potentail patch 的关键代码在哪里?](#potential-patching-的关键)
+3. [代码结构是什么样, 我开发时应该注意什么](#代码结构)
+4. [`OUT.VR`, `atom.config` 中都有 `Lattice` 变量, 如何在 `MaterialSystemInfo` 中保持一致性](#objects)
 
 
 
@@ -144,12 +144,14 @@ $$
 +1 / \varepsilon r . & \mathbf{r} \notin \Omega_{512} .
 \end{array}\right.
 $$
+
 具体实现细节上, 因为球对称的电荷密度在球外的势场和点电荷势场无异, 为了方便做 FFT 解 Poisson 方程, 在 $\Omega_{512}$ 内的电荷电荷密度并不是一个点电荷, 而是具有展宽的, 它的形式大概是
+
 $$
-\rho(r)=\left\{\begin{array}{lr}
+\rho(r)=\left\{\begin{case}{lr}
 sinc(r/R_0), & r \lt R_0 \\
 0 . & r \ge R_0 .
-\end{array}\right.
+\end{case}\right.
 $$
 
 球对称电荷密度分布, 它的归一化形式以及单个该电荷密度分布产生的势场的解析形式可以在代码中找到,
