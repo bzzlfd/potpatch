@@ -102,10 +102,10 @@ OUT.EIGEN 是一个文本文件
 `patch.py` 和 `correction.py` 是执行 potentail patching 的关键代码, 相较于用户, 这些代码更接近开发者, 它全部使用Hartree原子单位
 
 $$
-V_{\mathrm{im}}(\mathbf{r})=\left\{\begin{array}{lr}
+V_{\mathrm{im}}(\mathbf{r})=\begin{cases}
 V_{\mathrm{im}}^{\mathrm{SC}}(\mathbf{r})-V_C(\mathbf{r})+V_{\text {align }}, & \mathbf{r} \in \Omega_{512} \\
 V_{\text {bulk }}(\mathbf{r})+1 / \varepsilon r . & \mathbf{r} \notin \Omega_{512} .
-\end{array}\right.
+\end{cases}.
 $$  
 where
 $$
@@ -115,10 +115,10 @@ $$
 `patch.py` 的工作是纯纯的 patch , 使得
 
 $$
-V_{\mathrm{im}}(\mathbf{r})=\left\{\begin{array}{lr}
+V_{\mathrm{im}}(\mathbf{r})=\begin{cases}
 V_{\mathrm{im}}^{\mathrm{SC}}(\mathbf{r}), & \mathbf{r} \in \Omega_{512} \\
 V_{\text {bulk }}(\mathbf{r}) . & \mathbf{r} \notin \Omega_{512} .
-\end{array}\right.
+\end{cases}.
 $$
 
 `correction.py`  中完成了其余的工作:
@@ -133,16 +133,16 @@ $$
 `plus_V_single` 的工作是处理 suuuupercell VR mesh, 它对势场加上
 
 $$
-V_{single} = 1 / \varepsilon r
+V_{single}(r) = 1 / \varepsilon r
 $$
 
 二者合起来就是
 
 $$
-\left\{\begin{array}{lr}
+\begin{cases}
 -V_C(\mathbf{r}), & \mathbf{r} \in \Omega_{512} \\
 +1 / \varepsilon r . & \mathbf{r} \notin \Omega_{512} .
-\end{array}\right.
+\end{cases}.
 $$
 
 具体实现细节上, 因为球对称的电荷密度在球外的势场和点电荷势场无异, 为了方便做 FFT 解 Poisson 方程, 在 $\Omega_{512}$ 内的电荷电荷密度并不是一个点电荷, 而是具有展宽的, 它的形式大概是
@@ -151,7 +151,7 @@ $$
 \rho(r)=\begin{cases}
 sinc(r/R_0), & r \lt R_0 \\
 0 . & r \ge R_0 .
-\end{cases
+\end{cases}
 $$
 
 球对称电荷密度分布, 它的归一化形式以及单个该电荷密度分布产生的势场的解析形式可以在代码中找到,
@@ -159,10 +159,10 @@ $$
 `edge_match_correct` 函数做的工作是
 
 $$
-\left\{\begin{array}{lr}
+\begin{cases}
 +V_{\text {align }}, & \mathbf{r} \in \Omega_{512} \\
 0 . & \mathbf{r} \notin \Omega_{512} .
-\end{array}\right.
+\end{cases}.
 $$
 
 `__main__.potpatch` 中有做patch和修正的顺序
