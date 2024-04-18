@@ -58,7 +58,7 @@ HSE 相对 LDA 的计算, 只需要把 `XCFUNCTIONAL` 改成 `XCFUNCTIONAL = HSE
 直接执行 `potpatch -i INPUT` 即开始 potentail patching 过程, `INPUT` 是告诉 `potpatch` 程序它需要的信息的文件. 本例子中是 `example/potpatch.input` 文件. 这个文件参数很简单, 应该看一下就知道应该怎么用了. 
 [note_potpatch](./note_potpatch.md) 处有关于 `potpatch` 程序和输入文件的文档. 
 
-### 3.1 LDA bulk Escan
+### 3.1 LDA Escan bulk
 这个计算设置基于普通的 nonscf job, 同样需要准备 `atom.config` 和 `IN.VR`, 这是 bulk 计算, 直接从 LDA bulk scf 当中复制过来就行了. 
 
 `etot.input` 基于普通的 `NONSCF` job :
@@ -82,7 +82,7 @@ bulk 计算的 `atom.config` 和 `IN.VR` 文件来自 LDA bulk scf 计算, 它�
 
 按道理说这一步的结果应该和之前 bulk 自洽计算算出来的结果一致. 
 
-### 3.2 LDA suuuupercell Escan
+### 3.2 LDA Escan suuuupercell
 `etot.input`, `IN.NONSCF`, `IN.KPT` 设置与 bulk 计算差别不大, 只需要新增杂质元素的赝势; 根据 patch 后尺寸设置 `N123` 就可以了. 
 
 Escan 的 `atom.config` 和 `IN.VR` 文件通过 `potpatch` 程序生成. 让我们编写 `potpatch` 程序的控制文件吧. 本例子提供了 `potpatch.input` 模板文件, 好了我们编写完了(没有).
