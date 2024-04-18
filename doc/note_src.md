@@ -148,10 +148,10 @@ $$
 具体实现细节上, 因为球对称的电荷密度在球外的势场和点电荷势场无异, 为了方便做 FFT 解 Poisson 方程, 在 $\Omega_{512}$ 内的电荷电荷密度并不是一个点电荷, 而是具有展宽的, 它的形式大概是
 
 $$
-\rho(r)=\left\{\begin{case}{lr}
+\rho(r)=\left\{\begin{cases}{lr}
 sinc(r/R_0), & r \lt R_0 \\
 0 . & r \ge R_0 .
-\end{case}\right.
+\end{cases}\right.
 $$
 
 球对称电荷密度分布, 它的归一化形式以及单个该电荷密度分布产生的势场的解析形式可以在代码中找到,
