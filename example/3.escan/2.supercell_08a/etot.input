@@ -1,0 +1,17 @@
+2  1
+JOB = NONSCF
+IN.PSP1 = vwr.Si.UPF
+IN.PSP2 = vwr.Al.UPF
+IN.ATOM = atom.config
+XCFUNCTIONAL = LDA
+Ecut = 44
+Ecut2 = 88
+
+OUT.WG = F
+
+IN.KPT = T
+IN.VR = T
+
+IN.NONSCF = T
+PRECISION = DOUBLE
+NUM_BAND = 1

@@ -1,0 +1,42 @@
+[build-system]
+requires = ["setuptools >= 61.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "potpatch"
+dynamic = ["version"]
+description = ""
+readme = "README.md"
+dependencies = [
+  "numpy",
+  "numba",
+]
+authors = [
+    { name = "爱丽丝跟我说不要喜欢上她😭", email = "zzkai@csrc.ac.cn" },
+]
+maintainers = [
+  {name = "nobody", email = "nobody@nowhere.com"}
+]
+license = { text = "MIT License" }
+classifiers = [
+  "Development Status :: 3 - Alpha", 
+  "Intended Audience :: Science/Research", 
+  "Topic :: Scientific/Engineering :: Physics", 
+  "License :: OSI Approved :: MIT License", 
+  "Operating System :: OS Independent", 
+  "Programming Language :: Python :: 3", 
+]
+keywords = ["physics", "materials", "science", "semiconductor", "defect level", "potentail patch", "DFT", "PWmat"]
+
+[project.urls]
+#Homepage = ""
+#Documentation = ""
+#Repository = ""
+#Issues = ""
+#Changelog = ""
+
+[project.scripts]
+potpatch = "potpatch.__main__:main"
+
+[tool.setuptools.dynamic]
+version = {attr = "potpatch.version.__version__"}
