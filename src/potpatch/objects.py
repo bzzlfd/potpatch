@@ -95,31 +95,33 @@ class Lattice():
         self.AL_AU = lattice.AL_AU
         return self
 
-    def __truediv__(self, lattice:'Lattice'):
-        """__truediv__ is designed to get supclLattice/bulkLattice, if you want Lattice/4, use Lattice * (1/4)"""
-        AL1 = self.AL_AU 
-        AL2 = lattice.AL_AU
+    def __truediv__(self, lattice:'Lattice') -> np.ndarray[int]:
+        assert isinstance(lattice, Lattice), \
+            "__truediv__ is designed to get supclLattice/bulkLattice magnification. if you want Lattice/4, use Lattice * (1/4)"
+
+        AL1 = self.in_unit("angstrom")
+        AL2 = lattice.in_unit("angstrom")
 
         div3 = np.zeros(3, dtype=np.int32)
         for i in range(3):
-            _div = [0,0,0]
+            _div = [1145,1419,19810]
             for j in range(3):
                 if (AL1[i,j]==0 and AL2[i,j]!=0) or (AL1[i,j]!=0 and AL2[i,j]==0):
-                    assert False, f"a{i+1}({AL1[i], AL2[i]}) in the two lattice is not parallel"
+                    assert False, f"a{i+1}({AL1[i], AL2[i]})Å in the two lattice is not parallel"
                 elif (AL1[i,j]==0 and AL2[i,j]==0):
                     _div[j] = np.nan
                 else:
                     _div[j] = AL1[i,j] / AL2[i,j]
-            assert not all([np.isnan(i) for i in _div]), f"a{i+1}({AL1[i], AL2[i]}) in the two lattice is zero vector"
-            _div = [i for i in _div if not np.isnan(i) ]
+            assert not all([np.isnan(i) for i in _div]), f"a{i+1}({AL1[i], AL2[i]})Å in the two lattice is zero vector"
+            
+            _div = [ i for i in _div if not np.isnan(i) ]
             for j in range(len(_div)):
-                assert abs(_div[0] - _div[j]) < 1e-6, f"a{i+1}({AL1[i], AL2[i]}) in the two lattice is not parallel"
-            assert _div[0] == int(_div[0]), "the magnification between the two lattices is not integer "
+                assert abs(_div[0] - _div[j]) < 1e-6, f"a{i+1}({AL1[i], AL2[i]})Å in the two lattice is not parallel"
+            assert _div[0] == int(_div[0]), f"the magnification of a{i+1}({AL1[i], AL2[i]})Å between the two lattices is not integer "
             div3[i] = _div[0]
         return div3
 
 
-# TODO 写一个自己检查各个变量类型, 然后转换的工具 (可以用在自己手动构建VR过程中的一些不规范的变量类型造成的影响)
 class VR():
     """
     OUT.VR

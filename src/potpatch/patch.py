@@ -19,11 +19,15 @@ def inspect_ingredient(supclInfo:MaterialSystemInfo, bulkInfo:MaterialSystemInfo
                 are coincide of bulk and supercell
     """
     
+    # lattice ?parrallel, ?integer mag
     supcl_size = supclInfo.lattice / bulkInfo.lattice
-    supcl_vrsize = supclInfo.vr.n123 / bulkInfo.vr.n123 #TODO 把这个写进VR除法里? 要不算了, Lattice才是亲儿子; 如果在第二个地方遇到就这么写
+    # supcl size inference
+    supcl_vrsize = supclInfo.vr.n123 / bulkInfo.vr.n123 #TODO 把这个写进VR除法里? 算了, Lattice才是亲儿子; 如果在第二个地方遇到就这么写
+    # supcl size ?integer mag
     if not all(np.abs(supcl_vrsize - np.int32(supcl_vrsize)) < 1e-6):
         raise ValueError("magnifacation between the two VR is not integer")
-    if not all(np.abs(supcl_vrsize - supcl_size) < 1e-6):
+    # Lattice and VR.n123: ?same
+    if not all(supcl_vrsize - supcl_size == 0):
         raise ValueError(f"magnifacation between Lattice({supcl_size}) and VR_mesh({supcl_vrsize}) is not equal")
     supcl_size = np.int32(supcl_size)
 
@@ -63,16 +67,10 @@ def inspect_ingredient(supclInfo:MaterialSystemInfo, bulkInfo:MaterialSystemInfo
                     warnings.warn(f"{pos1}(from bulk make_supercell) and {pos2}(from supcl) doesn't coincide ")
         if not err:
             print("no error")
-    # TODO 检查奇数 偶数
     return supcl_size
 
 
 def patch(supclInfo:MaterialSystemInfo, bulkInfo:MaterialSystemInfo, supcl_size, target_size) -> MaterialSystemInfo:
-    # supcl size check&inference
-    # Lattice: parrallel, integer mag
-    # VR.n123: integer mag
-    # Lattice and VR.n123: same
-
     suuuupclInfo = MaterialSystemInfo()
     suuuupclInfo.charge=supclInfo.charge
 
