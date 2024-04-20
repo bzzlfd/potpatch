@@ -12,11 +12,11 @@ def gen_charge_correct(supclInfo:MaterialSystemInfo):
     """
     supclInfo: provide AL & n123 & charge
         
-    `charge` at `charge_density`
+    `charge` at `charge_density` & `plus_V`
     `epsilon` at `minus/plus_V`
     don't modify them
     
-    in this function, all quantity is in a.u.
+    in this function, all quantity is in a.u., 1 electron has 1 a.u. charge.
 
     generate functions
     """
@@ -56,7 +56,7 @@ def gen_charge_correct(supclInfo:MaterialSystemInfo):
     def minus_V_periodic(supclInfo:MaterialSystemInfo):
         """
         input supercell MSInfo
-        return a 3D-array mesh, 
+        modify its 3D-array vr mesh, 
         """
         fourier_coeff = np.fft.fftn(mesh_rho, axes=(0,1,2))
         n1, n2, n3 = mesh_rho.shape
@@ -103,6 +103,7 @@ def gen_charge_correct(supclInfo:MaterialSystemInfo):
     def plus_V_single(suuuupclInfo:MaterialSystemInfo):
         """
         input suuuupercell MSInfo
+        modify its 3D-array vr mesh, 
         """
         @jit(nopython=True)
         def _plus_V_single(n123, suuuupcl_mesh):
