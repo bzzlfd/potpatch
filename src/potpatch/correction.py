@@ -59,10 +59,10 @@ def gen_charge_correct(supclInfo:MaterialSystemInfo):
         modify its 3D-array vr mesh, 
         """
         fourier_coeff = np.fft.fftn(mesh_rho, axes=(0,1,2))
-        n1, n2, n3 = mesh_rho.shape
 
         @jit(nopython=True)
         def _rho2V_fourier_coeff(fourier_coeff):
+            n1, n2, n3 = fourier_coeff.shape
             for i in range(-n1//2,n1//2):
                 for j in range(-n2//2,n2//2):
                     for k in range(-n3//2,n3//2):
@@ -106,8 +106,8 @@ def gen_charge_correct(supclInfo:MaterialSystemInfo):
         modify its 3D-array vr mesh, 
         """
         @jit(nopython=True)
-        def _plus_V_single(n123, suuuupcl_mesh):
-            n1, n2, n3 = n123
+        def _plus_V_single(suuuupcl_mesh):
+            n1, n2, n3 = suuuupcl_mesh.shape
             for i in range(-n1//2,n1//2):
                 for j in range(-n2//2,n2//2):
                     for k in range(-n3//2,n3//2):
@@ -122,7 +122,7 @@ def gen_charge_correct(supclInfo:MaterialSystemInfo):
                             suuuupcl_mesh[i,j,k] += \
                                 (np.sinc(r/R_cutoff)/R_cutoff + 1/R_cutoff) * charge  / epsilon
         t0 = perf_counter()
-        _plus_V_single(suuuupclInfo.vr.n123, suuuupclInfo.vr.mesh)
+        _plus_V_single(suuuupclInfo.vr.mesh)
         # print(f"_plus_V_single time cost: {perf_counter() - t0} s")
 
     return minus_V_periodic, plus_V_single

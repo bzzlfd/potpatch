@@ -3,7 +3,7 @@ from textwrap import dedent
 from time import perf_counter
 
 import numpy as np
-from numba import jit
+from numba import jit, guvectorize
 
 from potpatch.objects import Lattice, VR, AtomConfig, MaterialSystemInfo
 from potpatch.supercell import make_supercell, modify_supercell, closed_to_edge
@@ -186,13 +186,16 @@ def patch_atom_v2(supclAtom:AtomConfig, bulkAtom:AtomConfig, supcl_size, target_
 def patch_vr(supclVR:VR, bulkVR:VR, supcl_size, target_size) -> VR:
     suuuupclVR = bulkVR * target_size
 
-    @jit(nopython=True)
-    def _overwrite_supcl_mesh(supclVR_n123, suuuupcl_mesh, supcl_mesh):
-        n1, n2, n3 = supclVR_n123
+    # @jit(nopython=True) 
+    @guvectorize('void(float64[:,:,:], float64[:,:,:])','(n1,n2,n3),(m1,m2,m3)')
+    def _overwrite_supcl_mesh(supcl_mesh, suuuupcl_mesh):
+        n1, n2, n3 = supcl_mesh.shape
         for i in range(-n1//2,n1//2):
             for j in range(-n2//2,n2//2):
                 for k in range(-n3//2,n3//2):
                     suuuupcl_mesh[i, j, k] = supcl_mesh[i,j,k]
-    _overwrite_supcl_mesh(supclVR.n123, suuuupclVR.mesh, supclVR.mesh)
+    t0 = perf_counter()
+    _overwrite_supcl_mesh(supclVR.mesh, suuuupclVR.mesh)
+    # print(f"_overwrite_supcl_mesh time cost: {perf_counter() - t0} s")
     # print(_overwrite_supcl_mesh.inspect_types())
     return suuuupclVR
