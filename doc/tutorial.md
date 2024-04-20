@@ -12,7 +12,7 @@
 1. `N123`: 计算输出势场文件 `OUT.VR` 实际上存储了一个实空间3维离散网格, 网格数由 晶格常数, `Ecut` 和并行参数 共同影响. 为了后续 patch 过程中网格匹配, 我非常建议在这里显式地设置 `N123`. 你可以看看[这篇笔记](./Ecut_n123_AL.md)进一步了解晶格常数, `Ecut2` 和 `N123` 的关系. 
 2. `XCFUNCTIONAL`: 建议采用 `XCFUNCTIONAL = LDA` , PBE泛函会让势场出现很多小锯齿, 这不利于potentail patch. 相应的, 赝势也建议用 LDA 赝势.
 3. `CONVERGENCE`: 非常建议设置 `CONVERGENCE=DIFFICULT`, 这样生成的势场在[康老师文章][kang] Fig3 检查中符合得更好. 
-4. `OUT.VATOM`: 建议打开 `OUT.VATOM`, 这是一会儿 (调整赝势环节) 要用到的米奇妙妙工具. 
+4. `OUT.VATOM`: 建议打开 `OUT.VATOM`, 这是一会儿 (调整赝势环节) 要用到的米奇妙妙工具. 你可以把它当作效仿绘制[康老师文章][kang] Fig3 中数据点的来源. 
 5. `OUT.WG`: 如果你认为波函数文件 `OUT.WG` 没用的话可以设置取消输出它以节省硬盘空间. 
 
 这个例子需要计算VBM, 考虑是否进行非自洽计算得到bulk的VBM, 但是Si的VBM在Gamma点, 自洽计算已经取到了, 可以用 `Gap_Read` 读取

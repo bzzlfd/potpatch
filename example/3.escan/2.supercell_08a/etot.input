@@ -8,6 +8,7 @@ Ecut = 44
 Ecut2 = 88
 
 OUT.WG = F
+OUT.VATOM = T
 
 IN.KPT = T
 IN.VR = T
