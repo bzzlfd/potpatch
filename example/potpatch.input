@@ -14,10 +14,12 @@ charge        = 1           # (setting NUM_ELECTRON) - (default NUM_ELECTRON)
                             # means total number of occupied valence electron in the system.
                             # Default value is the value for neutral system.
 epsilon       = 12.34
-frozen_range  = 1.0         # [for inspect]. not necessary, when set, check 
+frozen_range  = 1.0         # angstrom. default is 1.0. when frozen_range < 0, the normal make supercell code was executed without freezing atom step
+                            # [for inspect]. not necessary. when it is set, `potpatch` will perform check before calculation.
+                            # this setting can help confirm the "edge atom positions" is as you expect
 size          = [4, 4, 4]   # size based on bulk
                             # [for inspect]. not necessary, `potpatch` code can infer the size of supercell
-                            # but this setting can help confirm the supercell size is as you expect
+                            # but this setting can help confirm the "supercell size" is as you expect
 
 [potpatch.output]
 size            = [8, 8, 8]
@@ -31,6 +33,8 @@ vr              = "./3.escan/2.supercell_08a/IN.VR"
 [mksupcl] 
 # it is a small script, but writing parameters into a file helps you know what it's doing even after a long time
 bulk_atomconfig = "./1.lda/1.bulk/2.scf/atom.config"
-supercell_size  = [4, 4, 4]     # unlike `potpatch.supercell.size`, this setting is necessary
-frozen_range    = 1.0           # angstrom, default is 1.0, when frozen_range < 0, the normal make supercell code was executed, without freezing atom step
+supercell_size  = [4, 4, 4]     # size based on bulk
+                                # unlike `potpatch.supercell.size`, this setting is necessary
+frozen_range    = 1.0           # angstrom. default is 1.0. when frozen_range < 0, the normal make supercell code was executed without freezing atom step
+                                # unlike `potpatch.supercell.frozen_range`, this setting is necessary
 output          = "./1.lda/2.supercell/1.relax/atom.config"
