@@ -91,14 +91,14 @@ Escan 的 `atom.config` 和 `IN.VR` 文件通过 `potpatch` 程序生成. 让我
 1. `[potpatch.bulk]` 和 `[potpatch.supercell]` 控制输入 `potpatch` 的信息, 包含供 patch 的 bulk 和 supercell 晶体结构 和 势场 文件相对于 `potpatch.input` 文件的位置; 
 2. supercell带电情况 `charge` , 它被定义为计算supercell时 PWmat 中 `(setting NUM_ELECTRON) - (default NUM_ELECTRON)` 得到的数值. 在本例子中 `charge = 2048-2047 = 1`
 3. 以及该体系的介电常数 `epsilon` , 在本例子中, Si 的相对介电常数是12.34. `[potpatch.supercell]` 下的 `frozen_range` 和 `size` 两个参数与 `mksupcl` 中的概念一样, 不需要设置它们 `potpatch` 也会正常工作, 单独设计这两个参数的原因是, supercell 不一定是 `potpatch mksupcl` 生成的, 这些参数帮助用户确认在 `potpatch` 执行过程中 supercell 与用户预期的一致. 
-   1. 你也可以使用 `potpatch --only-inspect` 打印更多 `potpatch` 程序目前了解到的信息, 并在程序开始执行 potentail patch 前终止. 
+   1. 你也可以使用 `potpatch --only-inspect` 让 `potpatch` 程序打印更多它目前了解到的信息, 并在开始执行 potentail patch 前终止. 
 4. `[potpatch.output]` 控制 `potpatch` 程序输出的信息, 包括 `atom.config` 和 `VR` 文件名, 和想要 patch 生成的 suuuupercell 的尺寸. 
 
 [note_potpatch](./note_potpatch.md) 处有 `potpatch` 程序和输入文件的文档. 
 
 在 `potpatch` 运行过程中, 会有一些输出, 它们可以帮助你判断 potential patching 是否出错了. "standard deviation of diffs at the boundary" 通常只有 几meV, 如果它太大请小心, 考虑使用更大的 supercell 以及检查之前的计算是否含有错误. 
 
-当 suuuupercell 尺寸是 8a 时计算得到的 binding energy 的结果是 81.25meV, 很接近[汪老师文章][wang]中的 80.1 meV, 计算在两张1080ti上花了6分钟. 大成功.
+当 suuuupercell 尺寸是 8a 时计算得到的 binding energy 的结果是 81.25meV, 很接近[汪老师文章][wang]中的 80.1 meV, 我用两张1080ti花了6分钟完成计算. 大成功.
 
 
 ## 4.修正赝势
