@@ -21,10 +21,10 @@
 使用版本的地方有 __init__, parse.py, pyproject.toml
 
 ### 入口文件
-`__init__.py`, `__main__.py`, `parse.py` 三个是入口相关文件, 
-`__init__.py` 定义了一个人通过 `import potpatch` 的方式执行时会发生什么
-`__main__.py` 定义了一个人通过 `python -m potpatch` 的方式执行时会发生什么; `parse` 是 `__main__.py` 执行过程中处理命令行参数和文件参数的模块, 它们的角色是忠实地向后续程序反映它们读到了什么(默认参数通常返回 `None` )
-在linux下输入 `type potpatch` 可以找到 `potpatch` 可执行文件所在地, 你可以查看 `pip` 安装的 `potpatch` 程序面纱下面是什么样的, 它被设计成和 `python -m potpatch` 有同样的行为
+`__init__.py`, `__main__.py`, `parse.py` 三个是入口相关文件:
+`__init__.py` 定义了一个人通过 `import potpatch` 的方式执行时会发生什么;  
+`__main__.py` 定义了一个人通过 `python -m potpatch` 的方式执行时会发生什么; `parse` 是 `__main__.py` 执行过程中处理命令行参数和文件参数的模块, 它们的角色是忠实地向后续程序解读它们读到了什么参数 (默认参数通常返回 `None` ). 
+在linux下输入 `type potpatch` 可以找到 `potpatch` 可执行文件所在地, 你可以查看 `pip` 安装的 `potpatch` 程序面纱下面是什么样的. 它被设计成和 `python -m potpatch` 有同样的行为.
 
 ### objects
 `objects.py` 中定义了很多class, 它们中的大多数都和某个 PWmat 文件一一对应, 当使用其中的 `read` method 时, 更是尽力还原原著
@@ -85,7 +85,7 @@ OUT.VATOM 是一个文本文件
 具体属性可以检查代码注释, 这个文档中的很多内容也会写到代码注释中, 如果那里才是它们应该待的地方
 
 #### `EIGEN`
-OUT.EIGEN 是一个文本文件
+OUT.EIGEN 是一个二进制文件
 
 它的任务只有从文件中读取, 此外没有其他工作. 
 具体属性可以检查代码注释, 这个文档中的很多内容也会写到代码注释中, 如果那里才是它们应该待的地方
