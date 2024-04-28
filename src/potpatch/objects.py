@@ -199,7 +199,7 @@ class VR():
         nnodes will be converted into `np.int32` when writing into file
         """
         if nnodes is None:
-            nnodes = self.mesh.size // (512*1024*1024)
+            nnodes = self.mesh.size // (256*1024*1024)
             nnodes = 1 if nnodes==0 else nnodes
             while self.mesh.size % nnodes != 0:
                 nnodes += 1
