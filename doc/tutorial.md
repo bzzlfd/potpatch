@@ -12,10 +12,10 @@
 1. `N123`: 计算输出势场文件 `OUT.VR` 实际上存储了一个实空间3维离散网格, 网格数由 晶格常数, `Ecut` 和并行参数 共同影响. 为了后续 patch 过程中网格匹配, 我非常建议在这里显式地设置 `N123`. 你可以看看[这篇笔记](./Ecut_n123_AL.md)进一步了解晶格常数, `Ecut2` 和 `N123` 的关系. 
 2. `XCFUNCTIONAL`: 建议采用 `XCFUNCTIONAL = LDA` , PBE泛函会让势场出现很多小锯齿, 这不利于potentail patch. 相应的, 赝势也建议用 LDA 赝势.
 3. `CONVERGENCE`: 非常建议设置 `CONVERGENCE=DIFFICULT`, 这样生成的势场在[康老师文章][kang] Fig3 检查中符合得更好. 
-4. `OUT.VATOM`: 建议打开 `OUT.VATOM`, 这是一会儿 (调整赝势环节) 要用到的米奇妙妙工具. 你可以把它当作效仿绘制[康老师文章][kang] Fig3 中数据点的来源. 
+4. `OUT.VATOM`: 建议打开 `OUT.VATOM`, 这是一会儿 (调整赝势环节) 要用到的米奇妙妙工具. 你可以把它当作效仿绘制[康老师文章][kang] Fig3 的数据点来源. 
 5. `OUT.WG`: 如果你认为波函数文件 `OUT.WG` 没用的话可以设置取消输出它以节省硬盘空间. 
 
-这个例子需要计算VBM, 考虑是否进行非自洽计算得到bulk的VBM, 但是Si的VBM在Gamma点, 自洽计算已经取到了, 可以用 `Gap_Read` 读取
+这个例子需要计算VBM, 考虑是否进行非自洽计算得到bulk的VBM, 但是Si的VBM在 $\Gamma$ 点, 自洽计算已经取到了, 可以用 `Gap_Read` 读取
 
 
 ### 1.2.1 LDA supercell relax
@@ -23,14 +23,14 @@
 
 相较于普通的制作超胞, 这里为了 potential patching 效果需要额外固定弛豫时在 patching 边界位置的原子, `potpatch` 程序提供了一个小程序 `potpatch mksupcl` 帮助完成这件事. `example/potpatch.input` 中有控制 mksupcl 行为的参数, 使用 `potpatch mksupcl -i INPUT` 告诉 `potpatch mksupcl` 去哪里找 `INPUT`(在这个例子中, 即`example/potpatch.input`) 文件, [note_potpatch](./note_potpatch.md) 处有关于 `potpatch mksupcl` 的解释. 
 
-关于超胞尺寸, 经验上 (对这个正方体lattice例子) 使用 4×4×4 超胞就足够满足需求了. 它的原子位置基本不受带电杂质的影响, 它的势场相较于bulk只剩下带电杂质产生的库伦势. 请做自己的检查. 
+关于超胞尺寸, 经验上 (对这个 8 原子正方体 lattice 例子) 使用 4×4×4 超胞就足够满足需求了. 它的原子位置基本不受带电杂质的影响, 它的势场相较于 bulk 只剩下带电杂质产生的库伦势. 请做自己的检查. 
 
 将 [0, 0, 0] (最近) 位置处的原子换成杂质原子. `potpatch` 程序假设杂质原子位于 [0, 0, 0] 进行 patch. 
 
 `etot.input` considerations:
 1. `N123`, `Ecut`, `Ecut2`: potpatch 程序对这些参数没什么要求, 可以随便设
 2. `IN.PSP`: 相较于bulk计算, 这里引入了新的杂质的赝势
-3. `NUM_ELECTRON`: 让体系是 close shell 会让结果更准, 但这通常会导致体系带电. 从杂质体系可能的带电状态中选择一个 close shell 的价电子数作为 `NUM_ELECTRON` 的数值. 在这个例子中, 原本没有缺陷的 4×4×4 supercell 有2048个价电子, 替换一个 Si 原子为 Al 原子后中性体系有 2047 个价电子, acceptor 获得一个电子变成 close shell 后有 2048 个电子, 所以应该设置 `NUM_ELECTRON = 2048`. 
+3. `NUM_ELECTRON`: 让体系是 close shell 会让结果更准 (这通常会导致体系带电). 从杂质体系可能的带电状态中选择一个 closed shell 的价电子数作为 `NUM_ELECTRON` 的数值. 在这个例子中, 原本没有缺陷的 4×4×4 supercell 有2048个价电子, 替换一个 Si 原子为 Al 原子后中性体系有 2047 个价电子, acceptor 获得一个电子变成 close shell 后有 2048 个电子, 所以应该设置 `NUM_ELECTRON = 2048`. 
 4. `MP_N123`: 超胞可以在倒空间少采样几个点, 这个例子中用单Gamma点已经足够了
 
 
@@ -63,7 +63,7 @@ HSE 相对 LDA 的计算, 只需要把 `XCFUNCTIONAL` 改成 `XCFUNCTIONAL = HSE
 
 `etot.input` 基于普通的 `NONSCF` job :
 1. `N123`: 为了确保 PWmat 不出错, 这里的 `N123` 需要使用与scf时同样的设置. 
-2. `IN.VR` 和 `IN.KPT`: 需要额外指定
+2. `IN.VR` 和 `IN.KPT`: 需要额外指定. (这个 tutorial 出于通用性的考虑使用 `IN.KPT` 文件, 在 `etot.input` 中正确设置 `MP_N123` 以替换 `IN.KPT` 也可以.)
 3. `OUT.WG`: 视情况可以关掉
 4. `IN.NONSCF`: 根据 Pwmat 文档要求, 需要设置成 `T`
 5. `PRECISION`: 根据 Pwmat 文档要求, 需要设置成 `DOUBLE`
