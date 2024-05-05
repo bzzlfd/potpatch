@@ -6,7 +6,8 @@ This is an implementation of the potentail patching, which is a semiconductor sh
 ## Installation
 ### Directly with pip
 ```bash
-# download and enter the `potpatch` project directory
+# download and enter the `potpatch` project directory, 
+# so that `pip` will find `potpatch` project file `pyproject.toml` at current directory `.`
 pip3 install .
 
 # try it out 
@@ -19,16 +20,16 @@ pip3 install -e .
 ```
 
 ### Some suggestions on offline machine installation
-the required packages of `potpatch` are `numpy` and `numba`, the *build dependencies* of `potpatch` are `setuptools>=61.0.0` and `wheel`
+the *dependencies* of `potpatch` are `numpy` and `numba`, the *build dependencies* of `potpatch` project are `setuptools>=61.0.0` and `wheel`
 
 there are some suggestions:
-1. [Anaconda](https://www.anaconda.com/) contains all dependencies what `potpatch` needs. consider installing it
+1. [Anaconda](https://www.anaconda.com/) contains all *dependencies* what `potpatch` needs. consider installing it
 2. pip offline installation:
-   1. Execute `pip3 download numpy numba setuptools wheel -d <path>` on a machine connected to internet. this commend will download required `*.whl` packages to the `<path>` which you specify.
-   2. upload package files in `<path>` to the offline machine.
-   3. Execute `pip3 install . --no-index --find-links=<path>` instead. `<path>` is where you place `*.whl` packages on offline machine. 
+   1. Execute `pip3 download numpy numba setuptools wheel -d <path1>` on a machine connected to internet. This commend will download required `*.whl` packages to the `<path1>` which you specify.
+   2. Upload package files to the offline machine in `<path2>`. 
+   3. Execute `pip3 install . --no-index --find-links=<path2>` instead. 
 3. about suggestions 2
-   1. I'm concerned that this installation method might encounter platform issues, but the advantage of this method is that you don't need to download an Anaconda.
+   1. I'm concerned that this installation method might encounter platform issues, but the advantage of this method is that you don't need to download an entire Anaconda.
    2. `pip install .` will install *build dependencies* anyway (I don't know why), so even if you have installed Anaconda, you still need to `pip download` the *build dependencies*. The fortunate thing is, these *build dependencies* are compatible with all platforms.
 4. about suggestions 3.2, there is an alternative method, using deprecated `python3 setup.py`
    1. `mv ./pyproject.toml deprecated/` and `cp deprecated/setup* ./`, then execute `python3 setup.py install` (or `python3 setup.py develop` for development). 
@@ -48,8 +49,8 @@ This tutorial focuses on the usage of the program. If you feel confused while re
 
 
 ## Contribution
-this code is in Alpha version. 
-bug reports, more natural usage recommends, unambiguous statements, implement of modify Pseudo Potentail, test codes, improvements ... are all welcome. 
+This code is in Alpha version. 
+Bug reports, more natural usage recommends, unambiguous statements, implement of modify Pseudo Potentail, test codes, improvements ... are all welcome. 
 
 `doc/` also have some notes to help understand the program.
 
