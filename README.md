@@ -24,14 +24,15 @@ the *dependencies* of `potpatch` are `numpy` and `numba`, the *build dependencie
 
 there are some suggestions:
 1. [Anaconda](https://www.anaconda.com/) contains all *dependencies* what `potpatch` needs. consider installing it
-2. pip offline installation:
+   1. `pip install .` will install *build dependencies* from internet anyway (I don't know why), so even if you have installed Anaconda, you still need to `pip download` the *build dependencies*. 
+2. `pip download`:
    1. Execute `pip3 download numpy numba setuptools wheel -d <path1>` on a machine connected to internet. This commend will download required `*.whl` packages to the `<path1>` which you specify.
    2. Upload package files to the offline machine in `<path2>`. 
    3. Execute `pip3 install . --no-index --find-links=<path2>` instead. 
-3. about suggestions 2
+3. about suggestion 2
    1. I'm concerned that this installation method might encounter platform issues, but the advantage of this method is that you don't need to download an entire Anaconda.
-   2. `pip install .` will install *build dependencies* anyway (I don't know why), so even if you have installed Anaconda, you still need to `pip download` the *build dependencies*. The fortunate thing is, these *build dependencies* are compatible with all platforms.
-4. about suggestions 3.2, there is an alternative method, using deprecated `python3 setup.py`
+   2. The fortunate thing is, these *build dependencies* are compatible with all platforms. 
+4. about suggestion 1.1, there is an alternative method, using deprecated `python3 setup.py`
    1. `mv ./pyproject.toml deprecated/` and `cp deprecated/setup* ./`, then execute `python3 setup.py install` (or `python3 setup.py develop` for development). 
 5. Additionally, there are some unorthodox methods.
    1. modify `PYTHONPATH` environment variable or copy this code into a directory where Python knows ([`python -m site`](https://docs.python.org/3/library/site.html) will provide you with some information.).
