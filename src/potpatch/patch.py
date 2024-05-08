@@ -31,13 +31,15 @@ def inspect_ingredient(supclInfo:MaterialSystemInfo, bulkInfo:MaterialSystemInfo
         raise ValueError(f"magnifacation between Lattice({supcl_size}) and VR_mesh({supcl_vrsize}) is not equal")
     supcl_size = np.int32(supcl_size)
 
-    if not all( bulkInfo.vr.n123 % 2 == 0 ):
+    if not all( bulkInfo.vr.n123 % 2 == 0 ) or \
+       not all( supclInfo.vr.n123 % 2 == 0 ) :
         warnings.warn(dedent(f"""
                     `N123` in bulk.vr is {bulkInfo.vr.n123}
+                    `N123` in supercll.vr is {supclInfo.vr.n123}
                     I am assuming that I'm dealing with even-numbered mesh for VR 
-                    in my mind when I write this code. if your grid is odd, 
-                    it could lead to potential issues. 
-                    I highly recommend forcibly setting `N123` to the even numver.
+                    when I write this code. if your grid is odd, it could lead to 
+                    potential issues. 
+                    It's recommended that forcibly set `N123` to the even numver.
                     """))
 
     if supclInfo.charge is None:

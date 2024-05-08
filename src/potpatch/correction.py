@@ -63,12 +63,13 @@ def gen_charge_correct(supclInfo:MaterialSystemInfo):
         @jit(nopython=True)
         def _rho2V_fourier_coeff(fourier_coeff):
             n1, n2, n3 = fourier_coeff.shape
-            for i in range(-n1//2,n1//2):
-                for j in range(-n2//2,n2//2):
-                    for k in range(-n3//2,n3//2):
+            # n=5 -> -3...1 -> -2...2
+            # n=6 -> -3...2 -> -2...0 ∪ 1...3
+            for i in range(-n1//2+1,n1//2+1):
+                for j in range(-n2//2+1,n2//2+1):
+                    for k in range(-n3//2+1,n3//2+1):
                         G = rlattice[0]*i + rlattice[1]*j + rlattice[2]*k
-                        G_conj = np.conj(G)
-                        G2 = G[0]*G_conj[0] + G[1]*G_conj[1] + G[2]*G_conj[2]
+                        G2 = G[0]*G[0] + G[1]*G[1] + G[2]*G[2]
                         if G2 == 0:
                             fourier_coeff[0,0,0] = 0
                         else:
@@ -79,6 +80,8 @@ def gen_charge_correct(supclInfo:MaterialSystemInfo):
 
         mesh_V = np.fft.ifftn(fourier_coeff, axes=(0,1,2))
         mesh_V = np.real(mesh_V)
+        assert (sai:=np.sum(np.abs(np.imag(mesh_V)))) < 1e-10, \
+            f"imag(mesh_V) |> abs |> sum = {sai}, which is not considered a real number mesh"
         supclInfo.vr.mesh -= mesh_V
 
     # plus_V_single
