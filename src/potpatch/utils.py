@@ -72,13 +72,17 @@ def simpson(dx:np.float64, y:np.ndarray) -> np.ndarray:
         output: 0   1   2   3
 
     Example: 
-    >>> simpson(0.5, np.log([1,1.5,2]))
-    array([0,0.3858...])
+    >>> simpson(0.5, np.log([1,1.5,2,2.5,3]))
+    array([0,0.3858...,0.9094...])
 
     i.e.::
 
-        input:  ln(1) ln(1.5) ln(2)
-        output: 0             0.3858...
+        input:  ln(1)     ln(1.5) ln(2)     ln(2.5) ln(3)
+        output: 0                 0.3858...         0.9094...
+        
+        ( ∫₁² lnx dx ≈ 0.38629436...
+          ∫₂³ lnx dx ≈ 0.90954250... )
+    
     """
     assert len(y) % 2 == 1, "length of y must be odd"
     intglength = (len(y)+1)//2
