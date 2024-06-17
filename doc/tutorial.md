@@ -2,7 +2,7 @@
 这个 tutorial 将以[汪老师文章][wang] Si bulk 中单个 Al 原子替换一个 Si 原子的 $Si_{Al}$ 作为具体例子演示计算流程并提示注意事项. 
 
 ## 1.为 potential patch 准备晶体结构和势场文件
-需要提前准备的文件只有 bulk 晶体结果文件. 
+需要提前准备的文件只有 bulk 晶体结构文件. 
 如果你在进行一个需要开 SOC 的计算, 可以从本步骤开始使用 SOC 的赝势, 等 patch 之后 Escan 计算再开 SOC. shallow level 对结构影响不大, 这一步开 SOC 与否不会有很大影响, 当然你在这里就打开 SOC 也没有什么问题. 
 
 ### 1.1.2 LDA bulk scf
@@ -19,7 +19,7 @@
 
 
 ### 1.2.1 LDA supercell relax
-从1.1中使用的 atom.config 制作supercell的晶体结果文件, 进行弛豫计算. 
+从1.1中使用的 atom.config 制作supercell的晶体结构文件, 进行弛豫计算. 
 
 相较于普通的制作超胞, 这里为了 potential patching 效果需要额外固定弛豫时在 patching 边界位置的原子, `potpatch` 程序提供了一个小程序 `potpatch mksupcl` 帮助完成这件事. `example/potpatch.input` 中有控制 mksupcl 行为的参数, 使用 `potpatch mksupcl -i INPUT` 告诉 `potpatch mksupcl` 去哪里找 `INPUT`(在这个例子中, 即`example/potpatch.input`) 文件, [note_potpatch](./note_potpatch.md) 处有关于 `potpatch mksupcl` 的解释. 
 
