@@ -203,6 +203,10 @@ class VR():
             nnodes = 1 if nnodes==0 else nnodes
             while self.mesh.size % nnodes != 0:
                 nnodes += 1
+        assert self.mesh.size % nnodes == 0, \
+            f"vr.mesh.size({self.mesh.size}) can't be devided evenly by nnodes({nnodes})"
+        assert self.mesh.size / nnodes <= (128*1024*1024), \
+            f"vr.mesh.size({self.mesh.size}) / nnodes({nnodes}) is larger than 128MiB"
 
         io = open(filename, "bw")
         # meta data
@@ -212,10 +216,10 @@ class VR():
         AL1d = np.reshape(AL, AL.size)
         write_fortran_binary_block(io, AL1d)
         
-        nr = self.mesh.size // nnodes
+        nr_n = self.mesh.size // nnodes
         mesh1d = np.reshape(self.mesh, self.mesh.size)
         for i in range(nnodes):
-            write_fortran_binary_block(io, mesh1d[i*nr:(i+1)*nr])
+            write_fortran_binary_block(io, mesh1d[i*nr_n:(i+1)*nr_n])
         
         io.close()
 
