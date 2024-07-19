@@ -1,10 +1,11 @@
 from time import perf_counter
+from textwrap import indent
 
 import numpy as np
 from numba import jit, guvectorize
 
 from potpatch.utils import simpson
-from potpatch.constant import HA, EPSILON0
+from potpatch.constant import HA, EPSILON0, BOHR
 from potpatch.objects import Lattice, VR, AtomConfig, MaterialSystemInfo
 
 
@@ -32,8 +33,13 @@ def gen_charge_correct(supclInfo:MaterialSystemInfo):
     vol = np.abs(np.linalg.det(AL))
     rlattice = (2 * np.pi * np.linalg.inv(AL)).T
     Rmin = np.min( 
-        [ np.dot(rlattice[i]/np.linalg.norm(rlattice[i]), AL[i]) for i in range(0,3) ]
+        [ np.linalg.norm(AL[i]) for i in range(0,3) ]
     ) / 2
+    print(
+        f"""
+        gen_charge_correct: charge_model.R = {Rmin*BOHR} angstrom
+        """
+    )
 
     # minus_V_periodic
     little_cube = np.array( [AL[i]/n123[i] for i in range(3)] )
