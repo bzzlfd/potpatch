@@ -26,7 +26,6 @@ def inspect_ingredient(supclInfo:MaterialSystemInfo, bulkInfo:MaterialSystemInfo
         raise ValueError("magnifacation between the two VR is not integer")
     # Lattice and VR.n123: ?same
     lattice_mulmag = bulkInfo.lattice * supcl_vrsize
-    print(f"{lattice_mulmag.fromwhere=}")
     if not supclInfo.lattice == lattice_mulmag:
         raise ValueError(f"""
                          magnifacation between Lattice and VR_mesh is not equal
