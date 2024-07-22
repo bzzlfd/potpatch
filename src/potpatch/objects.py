@@ -203,6 +203,18 @@ class VR():
             nnodes = 1 if nnodes==0 else nnodes
             while self.mesh.size % nnodes != 0:
                 nnodes += 1
+        # {mnodes} processors, {nnodes} vr slices
+        # in Escan pot_input, 
+        #     mod(mnodes, nnodes) == 0, if mnodes > nnodes => nnodes is 2^n
+        #     mod(nnodes, mnodes) == 0, if nnodes > mnodes
+        # but mnodes is unknown in potpatcch
+        # 1. when nnodes is     specified, check mnodes 
+        # 2. when nnodes is not specified, another while loop
+        # but mnodes is unknown in potpatcch
+        if vr_fmt == "Escan":
+            print("be careful of the relation between Escan parallel nnodes and vr slice nnodes")
+        #     while self.mesh.size % nnodes != 0 and (nnodes & (nnodes - 1)): # nnodes is 2^n
+        #         nnodes += 1
         assert self.mesh.size % nnodes == 0, \
             f"vr.mesh.size({self.mesh.size}) can't be devided evenly by nnodes({nnodes})"
         assert self.mesh.size / nnodes <= (128*1024*1024), \
