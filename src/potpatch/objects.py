@@ -1,5 +1,6 @@
 import os
 from copy import deepcopy, copy
+import warnings
 
 import numpy as np
 
@@ -83,7 +84,8 @@ class Lattice():
         AL = np.zeros((3,3))
         for i in range(3):
             AL[i] = self.AL[i] * magnification[i]
-        fromwhere = copy(self.fromwhere).append(f"(    {magnification=})")
+        fromwhere = copy(self.fromwhere)
+        fromwhere.append(f"(    {magnification=})")
         return Lattice(AL, self.unit, fromwhere=fromwhere)
 
     def __rmul__(self, magnification):
@@ -96,6 +98,9 @@ class Lattice():
         return self
 
     def __truediv__(self, lattice:'Lattice') -> np.ndarray[int]:
+        # TODO 或许写成矩阵形式更好, 还能照顾到并不是
+        # TODO 或许这里不应该限定整数
+        raise NotImplementedError()
         assert isinstance(lattice, Lattice), \
             "__truediv__ is designed to get supclLattice/bulkLattice magnification. if you want Lattice/4, use Lattice * (1/4)"
 
@@ -107,7 +112,7 @@ class Lattice():
             _div = [1145,1419,19810]
             for j in range(3):
                 if (AL1[i,j]==0 and AL2[i,j]!=0) or (AL1[i,j]!=0 and AL2[i,j]==0):
-                    assert False, f"a{i+1}({AL1[i], AL2[i]})Å in the two lattice is not parallel"
+                    assert False, f"a{i+1}({AL1[i], AL2[i]})Å in the two lattice is not parallel" # TODO 一个是0向量, 它平行于任何向量, 但是被放在这个情况里了
                 elif (AL1[i,j]==0 and AL2[i,j]==0):
                     _div[j] = np.nan
                 else:
@@ -117,10 +122,20 @@ class Lattice():
             _div = [ i for i in _div if not np.isnan(i) ]
             for j in range(len(_div)):
                 assert abs(_div[0] - _div[j]) < 1e-6, f"a{i+1}({AL1[i], AL2[i]})Å in the two lattice is not parallel"
-            assert _div[0] == int(_div[0]), f"the magnification of a{i+1}({AL1[i], AL2[i]})Å between the two lattices is not integer "
+            if not _div[0] == int(_div[0]):
+                warnings.warn(f"the magnification of a{i+1}({AL1[i], AL2[i]})Å between the two lattices is not integer ")
             div3[i] = _div[0]
         return div3
 
+    def __floordiv__(self, lattice:'Lattice'):
+        raise NotImplementedError()
+        """
+        return a Rational number Vector. 
+        Julia user: very in river
+        """
+        assert isinstance(lattice, Lattice), \
+            "__truediv__ is designed to get supclLattice/bulkLattice magnification. if you want Lattice/4, use Lattice * (1/4)"
+        pass
 
 class VR():
     """
