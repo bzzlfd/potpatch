@@ -70,7 +70,7 @@ class Lattice():
 
     def __eq__(self, lattice:'Lattice') -> bool:
         # TODO 判断类型是不是 Lattice
-        return np.all(np.abs(self.AL_AU-lattice.AL_AU) < 1e-6) 
+        return np.all(np.abs(self.AL_AU-lattice.AL_AU) < 1e-5) 
 
     def __mul__(self, magnification):
         """
