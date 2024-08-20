@@ -69,8 +69,8 @@ def gen_charge_correct(supclInfo:MaterialSystemInfo):
         @jit(nopython=True)
         def _rho2V_fourier_coeff(fourier_coeff):
             n1, n2, n3 = fourier_coeff.shape
-            # n=5 -> -3...1 -> -2...2
-            # n=6 -> -3...2 -> -2...0 ∪ 1...3
+            # n=5  //2->  -3...1  +1->  -2...2
+            # n=6  //2->  -3...2  +1->  -2...0 ∪ 1...3
             for i in range(-n1//2+1,n1//2+1):
                 for j in range(-n2//2+1,n2//2+1):
                     for k in range(-n3//2+1,n3//2+1):
