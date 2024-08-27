@@ -499,7 +499,7 @@ class MaterialSystemInfo():
                  vr: VR | None = None,                  vr_filename:    str | None = None, vr_fmt:str="PWmat", \
                  vatom: VATOM | None = None,            vatom_filename: str | None = None, \
                  eigen: EIGEN | None = None,            eigen_filename: str | None = None, \
-                 charge=None, epsilon=None, 
+                 charge=None, charge_pos=None, epsilon=None, 
                  comment: str="unkown MaterialSystemInfoSummary") -> None:
         """
         self.lattice can take the data from vr/atomconfig modified by the `lattice_check_trigger=check_modify_lattice`
@@ -510,6 +510,7 @@ class MaterialSystemInfo():
         self.comment    = comment
 
         self.charge     = charge
+        self.charge_pos = charge_pos
         self.epsilon    = epsilon
 
         self.vr         = VR(lattice_check_trigger=self.check_modify_lattice)

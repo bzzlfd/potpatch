@@ -47,18 +47,33 @@ def inspect_ingredient(supclInfo:MaterialSystemInfo, bulkInfo:MaterialSystemInfo
                     """))
 
     if supclInfo.charge is None:
-        raise ValueError("information of supercell `charge` is not given")
+        warnings.warn("information of supercell `charge` is not given")
+    if supclInfo.charge_pos is None:
+        supclInfo.charge_pos = np.array([0.,0.,0.])
+    else:
+        if any(supclInfo.charge_pos != np.zeros(3)):
+            for i in range(3):
+                pos_i = supclInfo.charge_pos[i] % 1
+                supclInfo.charge_pos[i] = pos_i if pos_i < 0.5 else pos_i-1
+            print(dedent(f"""
+                Warning: supercell.charge_pos is {supclInfo.charge_pos}
+                    In principle, it should be [0, 0, 0].
+                    Parameter `charge_pos` provides more flexiblity, but with that comes limited/dangerous. 
+                    In previous supercell SCF calculation, patch boundary atoms were fixed. If  
+                    `charge_pos` is too close to the boundary, full relaxation is questionable. 
+                    Do your own check. 
+                """))
     if supclInfo.epsilon is None:
         raise ValueError("information of supercell `epsilon` is not given")
 
     if size_confirm is not None:
-        print(f"{size_confirm = } is specified...", end="")
+        print(f"{size_confirm = } is specified ... ", end="")
         if not all(supcl_size == size_confirm):
             warnings.warn(f"supcl_size = {list(supcl_size)} and size_confirm = {list(size_confirm)}")
         else:
             print("no error")
-    if frozen_confirm is not None:
-        print(f"{frozen_confirm = } is specified...", end="")
+    if (frozen_confirm is not None):
+        print(f"{frozen_confirm = } is specified ... ", end="")
         supclAtom_1 = make_supercell(bulkInfo.atomconfig, supcl_size)
         supclAtom_1 = modify_supercell(supclAtom_1, frozen_confirm)
         supclAtom_2 = supclInfo.atomconfig
@@ -78,7 +93,8 @@ def inspect_ingredient(supclInfo:MaterialSystemInfo, bulkInfo:MaterialSystemInfo
 
 def patch(supclInfo:MaterialSystemInfo, bulkInfo:MaterialSystemInfo, supcl_size, target_size) -> MaterialSystemInfo:
     suuuupclInfo = MaterialSystemInfo()
-    suuuupclInfo.charge=supclInfo.charge
+    suuuupclInfo.charge     = supclInfo.charge
+    suuuupclInfo.charge_pos = supclInfo.charge_pos
 
     t0 = perf_counter()
     suuuupclInfo.atomconfig = patch_atom_v2(supclInfo.atomconfig, bulkInfo.atomconfig, supcl_size, target_size)

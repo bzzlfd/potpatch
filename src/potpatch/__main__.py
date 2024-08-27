@@ -3,7 +3,8 @@ from os.path import join
 from textwrap import indent, dedent
 from time import perf_counter
 
-from numpy import prod
+import numpy as np
+from numpy import prod, array, zeros
 
 from potpatch.constant import BOHR, HA, EPSILON0
 from potpatch.objects import (Lattice, 
@@ -30,6 +31,7 @@ def main():
 def potpatch(args):
     target_size        = args.output.size
     charge             = args.supcl.charge
+    charge_pos         = np.array(args.supcl.charge_pos) if args.supcl.charge_pos is not None else np.array([0.,0.,0.])
     epsilon            = args.supcl.epsilon
 
     supcl_size         = args.supcl.size
@@ -40,7 +42,7 @@ def potpatch(args):
     bulkInfo    = MaterialSystemInfo(atoms_filename=bulk_atomconfig,  vr_filename=bulk_vr)
     supcl_atomconfig   = join(args.inputfile_path, args.supcl.atomconfig )
     supcl_vr           = join(args.inputfile_path, args.supcl.vr         )
-    supclInfo   = MaterialSystemInfo(atoms_filename=supcl_atomconfig, vr_filename=supcl_vr, charge=charge, epsilon=epsilon)
+    supclInfo   = MaterialSystemInfo(atoms_filename=supcl_atomconfig, vr_filename=supcl_vr, charge=charge, charge_pos=charge_pos, epsilon=epsilon)
     output_atomconfig  = args.output.atomconfig if args.output.atomconfig is not None else f"atom.config_{bulkInfo.atomconfig.natoms*prod(target_size)}"
     output_vr          = args.output.vr         if args.output.vr         is not None else f"IN.VR_{bulkInfo.atomconfig.natoms*prod(target_size)}"
     output_atomconfig  = join(args.inputfile_path, output_atomconfig)
@@ -68,6 +70,7 @@ supercell:
 {indent(f"nnodes: {supclInfo.vr.nnodes}", space4*2)}
     atom.config({supclInfo.atomconfig.filename}):
     charge: {supclInfo.charge}
+    charge_pos: {supclInfo.charge_pos}
     epsilon: {supclInfo.epsilon}
 """
         )

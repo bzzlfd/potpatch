@@ -2,6 +2,7 @@ from time import perf_counter
 from textwrap import indent
 
 import numpy as np
+from numpy import prod, abs
 from numba import jit, guvectorize
 
 from potpatch.utils import simpson
@@ -14,6 +15,7 @@ def gen_charge_correct(supclInfo:MaterialSystemInfo):
     supclInfo: provide AL & n123 & charge
         
     `charge` at `charge_density` & `plus_V`
+    `charge_pos` in (-0.5,0.5] (because of -n//2+1...n//2+1); zeros(3) if is None; at decive `Rmin`
     `epsilon` at `minus/plus_V`
     don't modify them
     
@@ -28,16 +30,22 @@ def gen_charge_correct(supclInfo:MaterialSystemInfo):
     AL      = supclInfo.lattice.AL_AU
     n123    = supclInfo.vr.n123
     charge  = supclInfo.charge
+    charge_pos = supclInfo.charge_pos if supclInfo.charge_pos is not None else np.zeros(3)
+    for i in range(3):
+        pos_i = charge_pos[i] % 1
+        charge_pos[i] = pos_i if pos_i <= 0.5 else pos_i-1 # n=6  //2->  -3...2  +1->  -2...0 ∪ 1...3( `=` matter)
     epsilon = supclInfo.epsilon
 
-    vol = np.abs(np.linalg.det(AL))
+    vol = abs(np.linalg.det(AL))
     rlattice = (2 * np.pi * np.linalg.inv(AL)).T
+    heights = [ np.dot(rlattice[i]/np.linalg.norm(rlattice[i]), AL[i]) for i in range(0,3) ]
     Rmin = np.min( 
-        [ np.linalg.norm(AL[i]) for i in range(0,3) ]
-    ) / 2
+        [ np.array([abs(0.5-charge_pos[i]), abs(-0.5-charge_pos[i])]) * h for (i,h) in enumerate(heights) ]
+    )
     print(
         f"""
         gen_charge_correct: charge_model.R = {Rmin*BOHR} angstrom
+        about {int( ( 4/3*np.pi * Rmin**3 ) / ( vol / prod(n123) ) )}/{prod(n123)} grid points in it. 
         """
     )
 
@@ -47,11 +55,14 @@ def gen_charge_correct(supclInfo:MaterialSystemInfo):
 
     @jit(nopython=True)
     def _make_mesh_rho(mesh_rho):
+        # `AL`, `charge_pos` are in supclInfo
         n1, n2, n3 = mesh_rho.shape
-        for i in range(-n1//2,n1//2):
-            for j in range(-n2//2,n2//2):
-                for k in range(-n3//2,n3//2):
-                    r = little_cube[0]*i + little_cube[1]*j + little_cube[2]*k
+        for i in range(-n1//2+1,n1//2+1):
+            for j in range(-n2//2+1,n2//2+1):
+                for k in range(-n3//2+1,n3//2+1):
+                    r = little_cube[0]*i - AL[0]*charge_pos[0] + \
+                        little_cube[1]*j - AL[1]*charge_pos[1] + \
+                        little_cube[2]*k - AL[2]*charge_pos[2]
                     r = np.sqrt(r[0]**2 + r[1]**2 + r[2]**2)
                     mesh_rho[i,j,k] = charge_density(charge, r, Rmin)
     t0 = perf_counter()
@@ -69,7 +80,7 @@ def gen_charge_correct(supclInfo:MaterialSystemInfo):
         @jit(nopython=True)
         def _rho2V_fourier_coeff(fourier_coeff):
             n1, n2, n3 = fourier_coeff.shape
-            # n=5  //2->  -3...1  +1->  -2...2
+            # n=5  //2->  -3...1  +1->  -2...2 (matter)
             # n=6  //2->  -3...2  +1->  -2...0 ∪ 1...3
             for i in range(-n1//2+1,n1//2+1):
                 for j in range(-n2//2+1,n2//2+1):
@@ -116,11 +127,14 @@ def gen_charge_correct(supclInfo:MaterialSystemInfo):
         """
         @jit(nopython=True)
         def _plus_V_single(suuuupcl_mesh):
+            # `AL`, `charge_pos` are in supclInfo
             n1, n2, n3 = suuuupcl_mesh.shape
-            for i in range(-n1//2,n1//2):
-                for j in range(-n2//2,n2//2):
-                    for k in range(-n3//2,n3//2):
-                        r = little_cube[0]*i + little_cube[1]*j + little_cube[2]*k
+            for i in range(-n1//2+1,n1//2+1):
+                for j in range(-n2//2+1,n2//2+1):
+                    for k in range(-n3//2+1,n3//2+1):
+                        r = little_cube[0]*i - AL[0]*charge_pos[0] + \
+                            little_cube[1]*j - AL[1]*charge_pos[1] + \
+                            little_cube[2]*k - AL[2]*charge_pos[2]
                         r = np.sqrt(r[0]**2 + r[1]**2 + r[2]**2)
                         if r > R_cutoff:
                             suuuupcl_mesh[i,j,k] += 1/r * charge / epsilon

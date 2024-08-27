@@ -67,6 +67,7 @@ def file_input_parse(PROG, args):
                     atomconfig   = sub_settings["supercell"]["atomconfig"], 
                     vr           = sub_settings["supercell"]["vr"], 
                     charge       = sub_settings["supercell"]["charge"], 
+                    charge_pos   = sub_settings["supercell"].get("charge_pos", None), 
                     epsilon      = sub_settings["supercell"]["epsilon"], 
                     size         = sub_settings["supercell"].get("size", None),
                     frozen_range = sub_settings["supercell"].get("frozen_range", None))
