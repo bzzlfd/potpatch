@@ -381,10 +381,15 @@ class AtomConfig():
         
         io.close()
 
-    def write_atoms(self, filename: str, atoms_fmt: str="PWmat"):
+    def write_atoms(self, filename: str, comment: str | None = None, 
+                    atoms_fmt: str = "PWmat"):
         io = open(filename, "w")
 
-        io.write(f"      {self.natoms} atoms\n")
+        if comment is not None:
+            comment = comment.replace("\n", " ")
+            io.write(f"      {self.natoms} atoms !! {comment}\n")
+        else:
+            io.write(f"      {self.natoms} atoms\n")
 
         if atoms_fmt == "PWmat": 
             io.write(" Lattice vector (Angstrom)\n")

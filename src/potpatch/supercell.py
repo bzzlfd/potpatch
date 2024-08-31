@@ -20,6 +20,8 @@ def modify_supercell(supclAtom: AtomConfig,
     rtac = supclAtom * (1, 1, 1)  # make a copy
 
     for (i, pos) in enumerate(rtac.positions):
+        rtac.moves[i] = np.array([1, 1, 1])
+    for (i, pos) in enumerate(rtac.positions):
         if closed_to_edge(rtac.lattice, pos, frozen_edge_width):
             rtac.moves[i] = np.array([0, 0, 0])
 

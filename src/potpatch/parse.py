@@ -30,14 +30,34 @@ def cli_arg_parse():
          help='sub-command help', 
          dest="func")
 
-    # cli mksupcl TODO mksupcl is a script. should support passing param in cli, params outside will overwrite the param in input file. 
+    # cli mksupcl 
     parser_mksupcl = subparsers.add_parser(
          "mksupcl", 
          help="a script to make supercell")
     parser_mksupcl.add_argument(
          "-i", "--input", 
-         help='specify the input file name. default is "potpatch.input"', 
-         default="potpatch.input")
+         help='specify the input bulk file name.', 
+         dest="input_",
+         required=True)
+    parser_mksupcl.add_argument(
+         "-o", "--output", 
+         help='specify the output supercell file name.'
+              'default is `atom.config_mksupcl_{natoms}`', 
+         default=None)
+    parser_mksupcl.add_argument(
+         "-r", "--range", 
+         help='specify the frozen range (angstrom) on the edge. '
+              'default is `1.0`', 
+         dest="frozen_range",
+         type=float,
+         default=1.0)
+    parser_mksupcl.add_argument(
+         "-s", "--size", 
+         help='specify the size of supercell (e.g. `--size 4 4 4`). ' 
+              'default is `[1, 1, 1]`', 
+         type=int,
+         default=[1, 1, 1],
+         nargs=3)
 
     # cli shift atom.config 
     parser_shift = subparsers.add_parser(
@@ -46,20 +66,18 @@ def cli_arg_parse():
     parser_shift.add_argument(
          "-B", "--bulk", 
          help='specify the bulk file name. ', 
-         action="store",
-         default="")
+         default=None)
     parser_shift.add_argument(
          "-S", "--supcl", 
          help='specify the supercell file name. ', 
-         action="store",
-         default="")
+         default=None)
     parser_shift.add_argument(
          "-s", "--shift",
-         help="e.g. `--shift 0.25 0.25 0.25`.   "  # TODO action="extend" python>=3.8
+         help="e.g. `--shift 0.25 0.25 0.25`.   "  
               "specify the fractional position `shift` to [0,0,0]. "
               "if both -B and -S are specified, it will be regarded "
               "as supercell's shift, bulk's shift can be infered", 
-         action="store",
+         type=float,
          nargs=3,
          required=True)
 
@@ -77,17 +95,21 @@ def cli_arg_parse():
                                onlyinspect=onlyinspect)
     elif args.func == "mksupcl":
         PROG = "mksupcl"
-        inputfile = args.input
-        ret_nt = NameTuple(inputfile=inputfile)
+        input_       = args.input_  # `input` is a function, and `input_` is aligned to `output``
+        output       = args.output
+        frozen_range = args.frozen_range
+        size         = args.size
+        ret_nt = NameTuple(input_=input_, output=output,
+                           frozen_range=frozen_range, size=size)
     elif args.func == "shift":
         PROG = "shift"
         bulk  = args.bulk
         supcl = args.supcl
         shift = args.shift
-        if len(bulk + supcl) == 0: 
+        if bulk is None and supcl is None: 
             print("one of {--bulk, --supcl} must be specified")
             exit(255)
-        elif len(bulk) == 0 or len(supcl) == 0: 
+        elif bulk is None or supcl is None: 
             count = 1
         else:
             count = 2
@@ -127,25 +149,15 @@ def file_input_parse(PROG, args):
             vr         = sub_settings["output"].get("vr", None))
         
         ret_nt = NameTuple(inputfile_dir  = inputfile_dir, 
-                            bulk           = bulk, 
-                            supcl          = supcl, 
-                            output         = output, 
-                            onlyinspect    = onlyinspect, 
-                            )
+                           bulk           = bulk, 
+                           supcl          = supcl, 
+                           output         = output, 
+                           onlyinspect    = onlyinspect, 
+                           )
     
+    # scripts
     elif PROG == "mksupcl":
-        sub_settings = settings["mksupcl"]
-        bulk_atomconfig = sub_settings["bulk_atomconfig"]
-        supcl_size      = sub_settings["supercell_size"]
-        frozen_range    = sub_settings.get("frozen_range", None)
-        output          = sub_settings.get("output", None)
-
-        ret_nt = NameTuple(inputfile_dir   = inputfile_dir, 
-                            bulk_atomconfig = bulk_atomconfig, 
-                            supcl_size      = supcl_size, 
-                            frozen_range    = frozen_range,
-                            output          = output
-                            )
+        ret_nt = args
     elif PROG == "shift":
         ret_nt = args
     else:

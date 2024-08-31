@@ -1,6 +1,7 @@
 # 边写注释边执行
 from os.path import join, dirname, basename
 from os import getcwd
+from pathlib import Path
 from textwrap import indent, dedent
 from time import perf_counter
 
@@ -92,40 +93,43 @@ supercell:
 
 
 def mksupcl(args):
-    supcl_size      = args.supcl_size 
-    frozen_range    = args.frozen_range if args.frozen_range is not None else 1.0
+    input_          = args.input_
+    output          = args.output
+    size            = args.size 
+    frozen_range    = args.frozen_range 
 
-    bulk_atomconfig    = join(args.inputfile_dir, args.bulk_atomconfig)
-    bulkAtom        = AtomConfig(filename=bulk_atomconfig)
-    output          = args.output       if args.output       is not None else f"atom.config_{bulkAtom.natoms*prod(supcl_size)}"
-    output             = join(args.inputfile_dir, output              )
+    bulk_ac = AtomConfig(filename=input_)
+    if output is None:
+        output = f"atom.config_mksupcl_{bulk_ac.natoms*prod(size)}"
+    comment = f"potpatch mksupcl -i {input_} -o {output} " + \
+        f"-s {size} -r {frozen_range} # pwd={getcwd()}"
     
-    supclAtom = make_supercell(bulkAtom, supcl_size)
-    supclAtom = modify_supercell(supclAtom, frozen_range)
-    supclAtom.write_atoms(output)
+    supcl_ac = make_supercell(bulk_ac, size)
+    supcl_ac = modify_supercell(supcl_ac, frozen_range)
+    supcl_ac.write_atoms(output, comment=comment)
 
 
 def shift(args):
-    shift = [float(s) for s in args.shift]
+    bulk    = args.bulk
+    supcl   = args.supcl
+    shift   = [float(s) for s in args.shift]
+    comment = f"potpatch shift -B {bulk} -S {supcl} " + \
+        f"-s {' '.join(str(f) for f in shift)} # pwd={getcwd()}"
 
     assert args.count == 1 or args.count == 2
     if args.count == 1:
-        if len(args.bulk) > 0:
-            bulk  = join(getcwd(), args.bulk)
-            ac    = AtomConfig(bulk)
-        if len(args.supcl) > 0:
-            supcl = join(getcwd(), args.supcl)
-            ac    = AtomConfig(supcl)
+        if bulk is not None:
+            ac    = AtomConfig(filename=bulk)
+        if supcl is not None:
+            ac    = AtomConfig(filename=supcl)
         shift_oneAtomConfig(ac, shift)
-        ac.write_atoms(ac.filename + "_shift")
+        ac.write_atoms(ac.filename + "_shift", comment=comment)
     elif args.count == 2:
-        bulk      = join(getcwd(), args.bulk)
         bulk_ac   = AtomConfig(filename=bulk)
-        supcl     = join(getcwd(), args.supcl)
         supcl_ac  = AtomConfig(filename=supcl)
         shift_twoAtomConfig(bulk_ac, supcl_ac, shift)
-        bulk_ac.write_atoms(bulk_ac.filename + "_shift")
-        supcl_ac.write_atoms(supcl_ac.filename + "_shift")
+        bulk_ac.write_atoms(bulk_ac.filename + "_shift", comment=comment)
+        supcl_ac.write_atoms(supcl_ac.filename + "_shift", comment=comment)
 
 
 if __name__ == "__main__":
