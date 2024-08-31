@@ -527,6 +527,9 @@ class MaterialSystemInfo():
         self.lattice can take the data from vr/atomconfig modified by the `lattice_check_trigger=check_modify_lattice`
         self.charge is the periodic charge in unit cell. `-1` means 1 electron
         """
+        if charge_pos:
+            assert np.shape(charge_pos) == np.array([0., 0., 0.]).shape
+
         self._latticeflag = None
         self.lattice    = None
         self.comment    = comment
