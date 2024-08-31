@@ -127,6 +127,19 @@ class NameTuple():
 
 
 # =============================================
+# functions 
+# =============================================
+def gen_counter():
+    count = 0
+
+    def plusplus():
+        nonlocal count
+        count += 1
+        return count
+    return plusplus
+
+
+# =============================================
 # decorators 
 # =============================================
 PRINT_TIMING_DEFAULT   = False
