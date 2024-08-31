@@ -55,11 +55,12 @@ def cli_arg_parse():
          default="")
     parser_shift.add_argument(
          "-s", "--shift",
-         help="e.g. `--shift '[0.25,0.25,0.25]'` (quatos are required).   "  # TODO action="extend" python>=3.8
+         help="e.g. `--shift 0.25 0.25 0.25`.   "  # TODO action="extend" python>=3.8
               "specify the fractional position `shift` to [0,0,0]. "
               "if both -B and -S are specified, it will be regarded "
               "as supercell's shift, bulk's shift can be infered", 
          action="store",
+         nargs=3,
          required=True)
 
     # parse_args

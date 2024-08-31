@@ -3,7 +3,6 @@ from os.path import join, dirname, basename
 from os import getcwd
 from textwrap import indent, dedent
 from time import perf_counter
-import ast
 
 import numpy as np
 from numpy import prod, array, zeros
@@ -107,7 +106,7 @@ def mksupcl(args):
 
 
 def shift(args):
-    shift = ast.literal_eval(args.shift)
+    shift = [float(s) for s in args.shift]
 
     assert args.count == 1 or args.count == 2
     if args.count == 1:
