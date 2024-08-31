@@ -37,11 +37,11 @@ def potpatch(args):
     supcl_size         = args.supcl.size
     frozen_range       = args.supcl.frozen_range
     
-    bulk_atomconfig    = join(args.inputfile_path, args.bulk.atomconfig  )
-    bulk_vr            = join(args.inputfile_path, args.bulk.vr          )
+    bulk_atomconfig    = join(args.inputfile_path, args.bulk.atomconfig )
+    bulk_vr            = join(args.inputfile_path, args.bulk.vr         )
     bulkInfo    = MaterialSystemInfo(atoms_filename=bulk_atomconfig,  vr_filename=bulk_vr)
-    supcl_atomconfig   = join(args.inputfile_path, args.supcl.atomconfig )
-    supcl_vr           = join(args.inputfile_path, args.supcl.vr         )
+    supcl_atomconfig   = join(args.inputfile_path, args.supcl.atomconfig)
+    supcl_vr           = join(args.inputfile_path, args.supcl.vr        )
     supclInfo   = MaterialSystemInfo(atoms_filename=supcl_atomconfig, vr_filename=supcl_vr, charge=charge, charge_pos=charge_pos, epsilon=epsilon)
     output_atomconfig  = args.output.atomconfig if args.output.atomconfig is not None else f"atom.config_{bulkInfo.atomconfig.natoms*prod(target_size)}"
     output_vr          = args.output.vr         if args.output.vr         is not None else f"IN.VR_{bulkInfo.atomconfig.natoms*prod(target_size)}"
