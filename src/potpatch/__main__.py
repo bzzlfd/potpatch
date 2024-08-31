@@ -17,6 +17,7 @@ from potpatch.patch import (patch, patch_vr, patch_atom, patch_atom_v2,
 from potpatch.supercell import make_supercell, modify_supercell
 from potpatch.parse import cli_arg_parse, file_input_parse
 
+
 def main():
     PROG, args = cli_arg_parse()
     PROG, args = file_input_parse(PROG, args)

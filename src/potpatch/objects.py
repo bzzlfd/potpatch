@@ -516,9 +516,9 @@ class MaterialSystemInfo():
     TODO __repr__, verbose
     """
     def __init__(self, 
-                 lattice:Lattice=None, 
-                 atomconfig: AtomConfig | None = None,  atoms_filename: str | None = None, atoms_fmt:str="PWmat", \
-                 vr: VR | None = None,                  vr_filename:    str | None = None, vr_fmt:str="PWmat", 
+                 lattice: Lattice = None, 
+                 atomconfig: AtomConfig | None = None,  atoms_filename: str | None = None, atoms_fmt: str = "PWmat",
+                 vr: VR | None = None,                  vr_filename:    str | None = None, vr_fmt: str = "PWmat", 
                  vatom: VATOM | None = None,            vatom_filename: str | None = None, 
                  eigen: EIGEN | None = None,            eigen_filename: str | None = None, 
                  charge=None, charge_pos=None, epsilon=None, 
