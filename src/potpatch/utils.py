@@ -1,8 +1,12 @@
 from textwrap import dedent
+from time import perf_counter
 
 import numpy as np
 
 
+# =============================================
+# fortran binary io
+# =============================================
 def read_fortran_binary_block_arraytype(io, dtype: np.dtype):
     # TODO 用 memoryview 实现 multi data type
     len_Byte = np.fromfile(io, np.int32, 1)[0]
@@ -71,6 +75,9 @@ def write_fortran_binary_block(io, *datas):
     len_Byte.tofile(io)
 
 
+# =============================================
+# numerical method
+# =============================================
 def simpson(dx: np.float64, y: np.ndarray) -> np.ndarray:
     """
     input list length must be odd, The corresponding index::
@@ -100,6 +107,9 @@ def simpson(dx: np.float64, y: np.ndarray) -> np.ndarray:
     return integrate
 
 
+# =============================================
+# basic classes
+# =============================================
 class NameTuple():
     def __init__(self, **kwargs) -> None:
         # print(kwargs)
@@ -114,3 +124,29 @@ class NameTuple():
 
     def __str__(self) -> str:
         return self.__repr__()
+
+
+# =============================================
+# decorators 
+# =============================================
+PRINT_TIMING_DEFAULT   = False
+PRINT_TIMING_ALL_CLOSE = None
+PRINT_TIMING_ALL_OPEN  = None
+
+
+def timing(tprint=PRINT_TIMING_DEFAULT):
+    assert PRINT_TIMING_ALL_CLOSE is None or PRINT_TIMING_ALL_OPEN is None
+    
+    def timing_decorator(func):
+        def _timing(*args, **kwargs):
+            nonlocal tprint
+            t0 = perf_counter()
+            results = func(*args, **kwargs)
+            if PRINT_TIMING_ALL_OPEN  is True: tprint = True
+            if PRINT_TIMING_ALL_CLOSE is True: tprint = False
+            if tprint:
+                print("...", f"{func.__name__:20s} time cost: {perf_counter() - t0} s")
+            return results
+        return _timing
+
+    return timing_decorator

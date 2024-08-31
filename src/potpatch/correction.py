@@ -1,11 +1,10 @@
-from time import perf_counter
 from textwrap import indent
 
 import numpy as np
 from numpy import prod, abs
 from numba import jit, guvectorize
 
-from potpatch.utils import simpson
+from potpatch.utils import simpson, timing
 from potpatch.constant import HA, EPSILON0, BOHR
 from potpatch.objects import Lattice, VR, AtomConfig, MaterialSystemInfo
 
@@ -54,6 +53,7 @@ def gen_charge_correct(supclInfo: MaterialSystemInfo):
     little_cube = np.array([AL[i]/n123[i] for i in range(3)])
     mesh_rho = np.ndarray(n123, dtype=np.float64)
 
+    @timing()
     @jit(nopython=True)
     def _make_mesh_rho(mesh_rho):
         # `AL`, `charge_pos` are in supclInfo
@@ -66,9 +66,7 @@ def gen_charge_correct(supclInfo: MaterialSystemInfo):
                         little_cube[2]*k - AL[2]*charge_pos[2]
                     r = np.sqrt(r[0]**2 + r[1]**2 + r[2]**2)
                     mesh_rho[i, j, k] = charge_density(charge, r, Rmin)
-    t0 = perf_counter()
     _make_mesh_rho(mesh_rho)
-    # print(f"_make_mesh_rho time cost: {perf_counter() - t0} s")
     
     def minus_V_periodic(supclInfo: MaterialSystemInfo):
         """
@@ -77,6 +75,7 @@ def gen_charge_correct(supclInfo: MaterialSystemInfo):
         """
         fourier_coeff = np.fft.fftn(mesh_rho, axes=(0, 1, 2))
 
+        @timing()
         @jit(nopython=True)
         def _rho2V_fourier_coeff(fourier_coeff):
             n1, n2, n3 = fourier_coeff.shape
@@ -91,9 +90,7 @@ def gen_charge_correct(supclInfo: MaterialSystemInfo):
                             fourier_coeff[0, 0, 0] = 0
                         else:
                             fourier_coeff[i, j, k] = -1 * -fourier_coeff[i, j, k] / G2 / (EPSILON0*epsilon)
-        t0 = perf_counter()
         _rho2V_fourier_coeff(fourier_coeff)
-        # print(f"_rho2V_fourier_coeff time cost: {perf_counter() - t0} s")
 
         mesh_V = np.fft.ifftn(fourier_coeff, axes=(0,1,2))
         mesh_V = np.real(mesh_V)
@@ -125,6 +122,7 @@ def gen_charge_correct(supclInfo: MaterialSystemInfo):
         input suuuupercell MSInfo
         modify its 3D-array vr mesh, 
         """
+        @timing()
         @jit(nopython=True)
         def _plus_V_single(suuuupcl_mesh):
             # `AL`, `charge_pos` are in supclInfo
@@ -144,9 +142,7 @@ def gen_charge_correct(supclInfo: MaterialSystemInfo):
                             ## (V_sph[i]*(r-i*dr)+V_sph[i+1]*((i+1)*dr-r)) / dr
                             suuuupcl_mesh[i,j,k] += \
                                 (np.sinc(r/R_cutoff)/R_cutoff + 1/R_cutoff) * charge / epsilon
-        t0 = perf_counter()
         _plus_V_single(suuuupclInfo.vr.mesh)
-        # print(f"_plus_V_single time cost: {perf_counter() - t0} s")
 
     return minus_V_periodic, plus_V_single
 

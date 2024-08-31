@@ -1,12 +1,12 @@
 import warnings
 from textwrap import dedent
-from time import perf_counter
 
 import numpy as np
 from numba import jit, guvectorize
 
 from potpatch.objects import Lattice, VR, AtomConfig, MaterialSystemInfo
 from potpatch.supercell import make_supercell, modify_supercell, closed_to_edge
+from potpatch.utils import timing
 
 
 def inspect_ingredient(supclInfo: MaterialSystemInfo,
@@ -108,18 +108,15 @@ def patch(supclInfo: MaterialSystemInfo, bulkInfo: MaterialSystemInfo,
     suuuupclInfo.charge     = supclInfo.charge
     suuuupclInfo.charge_pos = supclInfo.charge_pos
 
-    t0 = perf_counter()
     suuuupclInfo.atomconfig = patch_atom_v2(
         supclInfo.atomconfig, bulkInfo.atomconfig, supcl_size, target_size)
-    # print(f"patch atom time cost: {perf_counter() - t0} s")
-    t0 = perf_counter()
     suuuupclInfo.vr = patch_vr(
         supclInfo.vr, bulkInfo.vr, supcl_size, target_size)
-    # print(f"patch vr time cost: {perf_counter() - t0} s")
     return suuuupclInfo
 
 
 # 这个代码只适合偶数 target_size
+
 def patch_atom(supclAtom: AtomConfig, bulkAtom: AtomConfig,
                supcl_size, target_size) -> AtomConfig:
     """
@@ -167,6 +164,7 @@ def patch_atom(supclAtom: AtomConfig, bulkAtom: AtomConfig,
 
 # TODO 如果奇数超胞, 奇数扩胞, 会出现什么问题吗
 # TODO 如果是奇数网格怎么办
+@timing()
 def patch_atom_v2(supclAtom: AtomConfig, bulkAtom: AtomConfig,
                   supcl_size, target_size) -> AtomConfig:
     """
@@ -227,10 +225,12 @@ def patch_atom_v2(supclAtom: AtomConfig, bulkAtom: AtomConfig,
     return rtac
 
 
+@timing()
 def patch_vr(supclVR: VR, bulkVR: VR, supcl_size, target_size) -> VR:
     suuuupclVR = bulkVR * target_size
 
     # @jit(nopython=True)
+    @timing()
     @guvectorize('void(float64[:,:,:], float64[:,:,:])',
                  '(n1,n2,n3),(m1,m2,m3)')
     def _overwrite_supcl_mesh(supcl_mesh, suuuupcl_mesh):
@@ -239,8 +239,5 @@ def patch_vr(supclVR: VR, bulkVR: VR, supcl_size, target_size) -> VR:
             for j in range(-n2//2, n2//2):
                 for k in range(-n3//2, n3//2):
                     suuuupcl_mesh[i, j, k] = supcl_mesh[i, j, k]
-    t0 = perf_counter()
     _overwrite_supcl_mesh(supclVR.mesh, suuuupclVR.mesh)
-    # print(f"_overwrite_supcl_mesh time cost: {perf_counter() - t0} s")
-    # print(_overwrite_supcl_mesh.inspect_types())
     return suuuupclVR
