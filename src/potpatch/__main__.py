@@ -1,7 +1,9 @@
 # 边写注释边执行
-from os.path import join
+from os.path import join, dirname, basename
+from os import getcwd
 from textwrap import indent, dedent
 from time import perf_counter
+import ast
 
 import numpy as np
 from numpy import prod, array, zeros
@@ -15,6 +17,7 @@ from potpatch.patch import (patch, patch_vr, patch_atom, patch_atom_v2,
                             inspect_ingredient)
 
 from potpatch.supercell import make_supercell, modify_supercell
+from potpatch.shift import shift_oneAtomConfig, shift_twoAtomConfig
 from potpatch.parse import cli_arg_parse, file_input_parse
 
 
@@ -25,6 +28,8 @@ def main():
         potpatch(args)
     elif PROG == "mksupcl":
         mksupcl(args)
+    elif PROG == "shift":
+        shift(args)
     else:
         assert False, f"Invalid PROG {PROG}"
 
@@ -38,16 +43,16 @@ def potpatch(args):
     supcl_size         = args.supcl.size
     frozen_range       = args.supcl.frozen_range
     
-    bulk_atomconfig    = join(args.inputfile_path, args.bulk.atomconfig )
-    bulk_vr            = join(args.inputfile_path, args.bulk.vr         )
+    bulk_atomconfig    = join(args.inputfile_dir, args.bulk.atomconfig )
+    bulk_vr            = join(args.inputfile_dir, args.bulk.vr         )
     bulkInfo    = MaterialSystemInfo(atoms_filename=bulk_atomconfig,  vr_filename=bulk_vr)
-    supcl_atomconfig   = join(args.inputfile_path, args.supcl.atomconfig)
-    supcl_vr           = join(args.inputfile_path, args.supcl.vr        )
+    supcl_atomconfig   = join(args.inputfile_dir, args.supcl.atomconfig)
+    supcl_vr           = join(args.inputfile_dir, args.supcl.vr        )
     supclInfo   = MaterialSystemInfo(atoms_filename=supcl_atomconfig, vr_filename=supcl_vr, charge=charge, charge_pos=charge_pos, epsilon=epsilon)
     output_atomconfig  = args.output.atomconfig if args.output.atomconfig is not None else f"atom.config_{bulkInfo.atomconfig.natoms*prod(target_size)}"
     output_vr          = args.output.vr         if args.output.vr         is not None else f"IN.VR_{bulkInfo.atomconfig.natoms*prod(target_size)}"
-    output_atomconfig  = join(args.inputfile_path, output_atomconfig)
-    output_vr          = join(args.inputfile_path, output_vr        )
+    output_atomconfig  = join(args.inputfile_dir, output_atomconfig)
+    output_vr          = join(args.inputfile_dir, output_vr        )
     
     supcl_size = inspect_ingredient(supclInfo, bulkInfo, size_confirm=supcl_size, frozen_confirm=frozen_range)
     if args.onlyinspect:
@@ -91,14 +96,37 @@ def mksupcl(args):
     supcl_size      = args.supcl_size 
     frozen_range    = args.frozen_range if args.frozen_range is not None else 1.0
 
-    bulk_atomconfig    = join(args.inputfile_path, args.bulk_atomconfig)
+    bulk_atomconfig    = join(args.inputfile_dir, args.bulk_atomconfig)
     bulkAtom        = AtomConfig(filename=bulk_atomconfig)
     output          = args.output       if args.output       is not None else f"atom.config_{bulkAtom.natoms*prod(supcl_size)}"
-    output             = join(args.inputfile_path, output              )
+    output             = join(args.inputfile_dir, output              )
     
     supclAtom = make_supercell(bulkAtom, supcl_size)
     supclAtom = modify_supercell(supclAtom, frozen_range)
     supclAtom.write_atoms(output)
+
+
+def shift(args):
+    shift = ast.literal_eval(args.shift)
+
+    assert args.count == 1 or args.count == 2
+    if args.count == 1:
+        if len(args.bulk) > 0:
+            bulk  = join(getcwd(), args.bulk)
+            ac    = AtomConfig(bulk)
+        if len(args.supcl) > 0:
+            supcl = join(getcwd(), args.supcl)
+            ac    = AtomConfig(supcl)
+        shift_oneAtomConfig(ac, shift)
+        ac.write_atoms(ac.filename + "_shift")
+    elif args.count == 2:
+        bulk      = join(getcwd(), args.bulk)
+        bulk_ac   = AtomConfig(filename=bulk)
+        supcl     = join(getcwd(), args.supcl)
+        supcl_ac  = AtomConfig(filename=supcl)
+        shift_twoAtomConfig(bulk_ac, supcl_ac, shift)
+        bulk_ac.write_atoms(bulk_ac.filename + "_shift")
+        supcl_ac.write_atoms(supcl_ac.filename + "_shift")
 
 
 if __name__ == "__main__":
