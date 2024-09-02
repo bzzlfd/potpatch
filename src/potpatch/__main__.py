@@ -1,4 +1,3 @@
-# 边写注释边执行
 from os.path import join, dirname, basename
 from os import getcwd
 from pathlib import Path

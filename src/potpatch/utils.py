@@ -155,10 +155,11 @@ def timing(tprint=PRINT_TIMING_DEFAULT):
             nonlocal tprint
             t0 = perf_counter()
             results = func(*args, **kwargs)
-            if PRINT_TIMING_ALL_OPEN  is True: tprint = True
-            if PRINT_TIMING_ALL_CLOSE is True: tprint = False
+            t1 = perf_counter()
+            tprint = True  if PRINT_TIMING_ALL_OPEN  is True else tprint 
+            tprint = False if PRINT_TIMING_ALL_CLOSE is True else tprint 
             if tprint:
-                print("...", f"{func.__name__:20s} time cost: {perf_counter() - t0} s")
+                print("...", f"{func.__name__:20s} time cost: {t1 - t0} s")
             return results
         return _timing
 

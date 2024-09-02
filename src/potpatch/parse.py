@@ -33,7 +33,7 @@ def cli_arg_parse():
     # cli mksupcl 
     parser_mksupcl = subparsers.add_parser(
          "mksupcl", 
-         help="a script to make supercell")
+         help="a script to make supercell and freeze atoms on the patching edge")
     parser_mksupcl.add_argument(
          "-i", "--input", 
          help='specify the input bulk file name.', 
@@ -41,7 +41,7 @@ def cli_arg_parse():
          required=True)
     parser_mksupcl.add_argument(
          "-o", "--output", 
-         help='specify the output supercell file name.'
+         help='specify the output supercell file name. '
               'default is `atom.config_mksupcl_{natoms}`', 
          default=None)
     parser_mksupcl.add_argument(
@@ -62,7 +62,8 @@ def cli_arg_parse():
     # cli shift atom.config 
     parser_shift = subparsers.add_parser(
          "shift", 
-         help="a script to shift one atom.config / bulk&supercell atom.config")
+         help="a script to shift one atom.config / "
+              "both bulk&supercell two atom.config(s)")
     parser_shift.add_argument(
          "-B", "--bulk", 
          help='specify the bulk file name. ', 
@@ -73,8 +74,9 @@ def cli_arg_parse():
          default=None)
     parser_shift.add_argument(
          "-s", "--shift",
-         help="e.g. `--shift 0.25 0.25 0.25`.   "  
-              "specify the fractional position `shift` to [0,0,0]. "
+         help="specify the fractional position `shift` "
+              "(e.g. `--shift 0.25 0.25 0.75`.) "
+              "shift `[shift, shift, shift]` to [0, 0, 0]. "
               "if both -B and -S are specified, it will be regarded "
               "as supercell's shift, bulk's shift can be infered", 
          type=float,
@@ -121,7 +123,7 @@ def cli_arg_parse():
 
 
 def file_input_parse(PROG, args):
-    if hasattr(args, "inputfile"):  # case `potpatch`, `mksupcl`
+    if hasattr(args, "inputfile"):  # case `potpatch`
         inputfile = args.inputfile
         with open(inputfile, "rb") as f:
             inputfile_dir = dirname(abspath(f.name))

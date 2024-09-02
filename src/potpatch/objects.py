@@ -143,6 +143,7 @@ class Lattice():
             "__truediv__ is designed to get supclLattice/bulkLattice magnification. if you want Lattice/4, use Lattice * (1/4)"
         pass
 
+
 class VR():
     """
     OUT.VR
@@ -198,25 +199,22 @@ class VR():
     def read_vr(self, filename, vr_fmt="PWmat"):
         self.filename = os.path.abspath(filename)
         self.vr_fmt = vr_fmt
-        io = open(filename, "br")
+        with open(filename, "br") as io:
+            n1, n2, n3, nnodes = read_fortran_binary_block(io, np.int32)
+            assert (n1*n2*n3) % nnodes == 0, "`n1*n2*n3` is not divisible by `nnodes`"
+            self.nnodes = nnodes
 
-        n1, n2, n3, nnodes = read_fortran_binary_block(io, np.int32)
-        assert (n1*n2*n3) % nnodes == 0, "`n1*n2*n3` is not divisible by `nnodes`"
-        self.nnodes = nnodes
+            AL = read_fortran_binary_block(io, np.float64)
+            AL = np.reshape(AL, (3, 3))
+            self._latticeflag = f"({self.comment}) read fromfile({self.filename})"
+            self.lattice = Lattice(AL, self.fmt2unit[vr_fmt], 
+                                   fromwhere=self._latticeflag)
 
-        AL = read_fortran_binary_block(io, np.float64)
-        AL = np.reshape(AL, (3, 3))
-        self._latticeflag = f"({self.comment}) read fromfile({self.filename})"
-        self.lattice = Lattice(AL, self.fmt2unit[vr_fmt], 
-                               fromwhere=self._latticeflag)
-
-        self.mesh = np.ndarray(n1*n2*n3)
-        nr = n1*n2*n3//nnodes
-        for i in range(0,nnodes):
-            self.mesh[i*nr: (i+1)*nr] = read_fortran_binary_block(io, np.float64)[0:nr]
-        self.mesh = np.reshape(self.mesh, (n1, n2, n3))
-
-        io.close()
+            self.mesh = np.ndarray(n1*n2*n3)
+            nr = n1*n2*n3//nnodes
+            for i in range(0, nnodes):
+                self.mesh[i*nr: (i+1)*nr] = read_fortran_binary_block(io, np.float64)[0:nr]
+            self.mesh = np.reshape(self.mesh, (n1, n2, n3))
 
     def write_vr(self, filename: str, vr_fmt="PWmat", 
                  nnodes: int | None = None):
@@ -245,21 +243,19 @@ class VR():
         assert self.mesh.size / nnodes <= (128*1024*1024), \
             f"vr.mesh.size({self.mesh.size}) / nnodes({nnodes}) is larger than 128MiB"
 
-        io = open(filename, "bw")
-        # meta data
-        write_fortran_binary_block(
-            io, np.array(self.mesh.shape, dtype=np.int32), np.int32(nnodes))
-        # AL data
-        AL = self.lattice.in_unit(self.fmt2unit[vr_fmt])
-        AL1d = np.reshape(AL, AL.size)
-        write_fortran_binary_block(io, AL1d)
-        
-        nr_n = self.mesh.size // nnodes
-        mesh1d = np.reshape(self.mesh, self.mesh.size)
-        for i in range(nnodes):
-            write_fortran_binary_block(io, mesh1d[i*nr_n:(i+1)*nr_n])
-        
-        io.close()
+        with open(filename, "bw") as io:
+            # meta data
+            write_fortran_binary_block(
+                io, np.array(self.mesh.shape, dtype=np.int32), np.int32(nnodes))
+            # AL data
+            AL = self.lattice.in_unit(self.fmt2unit[vr_fmt])
+            AL1d = np.reshape(AL, AL.size)
+            write_fortran_binary_block(io, AL1d)
+            
+            nr_n = self.mesh.size // nnodes
+            mesh1d = np.reshape(self.mesh, self.mesh.size)
+            for i in range(nnodes):
+                write_fortran_binary_block(io, mesh1d[i*nr_n:(i+1)*nr_n])
 
     def __mul__(self, magnification) -> 'VR':
         """
@@ -353,60 +349,57 @@ class AtomConfig():
     def read_atoms(self, filename: str, 
                    atoms_fmt: str = "PWmat") -> np.ndarray:
         self.filename = os.path.abspath(filename)
-        io = open(filename, "r")
+        with open(filename, "r") as io:
+            natoms = int(io.readline().split()[0])
+            self.natoms = natoms
 
-        natoms = int(io.readline().split()[0])
-        self.natoms = natoms
+            if atoms_fmt == "PWmat": 
+                io.readline()
+            AL = np.zeros((3, 3))
+            for i in range(3):
+                AL[i] = np.array([np.float64(i) for i in io.readline().split()[0:3]])
+            self._latticeflag = f"({self.comment}) read fromfile({self.filename})"
+            self.lattice = Lattice(AL, self.fmt2unit[atoms_fmt], 
+                                   fromwhere=self._latticeflag)
 
-        if atoms_fmt == "PWmat": io.readline()
-        AL = np.zeros((3, 3))
-        for i in range(3):
-            AL[i] = np.array([np.float64(i) for i in io.readline().split()[0:3]])
-        self._latticeflag = f"({self.comment}) read fromfile({self.filename})"
-        self.lattice = Lattice(AL, self.fmt2unit[atoms_fmt], 
-                               fromwhere=self._latticeflag)
-
-        if atoms_fmt == "PWmat": io.readline()
-        itype_list = np.zeros(natoms, dtype=np.int32)
-        position_list = np.zeros((natoms, 3), dtype=np.float64)
-        move_list = np.zeros((natoms, 3), dtype=np.int32)
-        for i in range(natoms):
-            s = io.readline().split()[0:7]
-            itype_list[i] = np.int32(s[0])
-            position_list[i] = np.array([np.float64(i) for i in s[1:4]])
-            move_list[i] = np.array([np.int32(i) for i in s[4:7]])
-        self.itypes     = itype_list
-        self.positions  = position_list
-        self.moves      = move_list
-        
-        io.close()
+            if atoms_fmt == "PWmat": 
+                io.readline()
+            itype_list = np.zeros(natoms, dtype=np.int32)
+            position_list = np.zeros((natoms, 3), dtype=np.float64)
+            move_list = np.zeros((natoms, 3), dtype=np.int32)
+            for i in range(natoms):
+                s = io.readline().split()[0:7]
+                itype_list[i] = np.int32(s[0])
+                position_list[i] = np.array([np.float64(i) for i in s[1:4]])
+                move_list[i] = np.array([np.int32(i) for i in s[4:7]])
+            self.itypes     = itype_list
+            self.positions  = position_list
+            self.moves      = move_list
 
     def write_atoms(self, filename: str, comment: str | None = None, 
                     atoms_fmt: str = "PWmat"):
-        io = open(filename, "w")
+        with open(filename, "w") as io:
+            if comment is not None:
+                comment = comment.replace("\n", " ")
+                io.write(f"      {self.natoms} atoms !! {comment}\n")
+            else:
+                io.write(f"      {self.natoms} atoms\n")
 
-        if comment is not None:
-            comment = comment.replace("\n", " ")
-            io.write(f"      {self.natoms} atoms !! {comment}\n")
-        else:
-            io.write(f"      {self.natoms} atoms\n")
+            if atoms_fmt == "PWmat": 
+                io.write(" Lattice vector (Angstrom)\n")
+            AL = self.lattice.in_unit(self.fmt2unit[atoms_fmt])
+            for i in range(3):
+                io.write("%20.14f%20.14f%20.14f\n" % tuple(AL[i]))
 
-        if atoms_fmt == "PWmat": 
-            io.write(" Lattice vector (Angstrom)\n")
-        AL = self.lattice.in_unit(self.fmt2unit[atoms_fmt])
-        for i in range(3):
-            io.write("%20.14f%20.14f%20.14f\n" % tuple(AL[i]))
-
-        if atoms_fmt == "PWmat": 
-            io.write(" Position, move_x, move_y, move_z\n")
-        for i in range(self.natoms):
-            if atoms_fmt == "PWmat":
-                io.write("%6d%17.9f%17.9f%17.9f   %1d %1d %1d\n" % 
-                         (self.itypes[i], *self.positions[i], *self.moves[i]))
-            elif atoms_fmt == "Escan":
-                io.write("%6d%17.9f%17.9f%17.9f   0 1\n" % 
-                         (self.itypes[i], *self.positions[i]))
-        io.close()
+            if atoms_fmt == "PWmat": 
+                io.write(" Position, move_x, move_y, move_z\n")
+            for i in range(self.natoms):
+                if atoms_fmt == "PWmat":
+                    io.write("%6d%17.9f%17.9f%17.9f   %1d %1d %1d\n" % 
+                             (self.itypes[i], *self.positions[i], *self.moves[i]))
+                elif atoms_fmt == "Escan":
+                    io.write("%6d%17.9f%17.9f%17.9f   0 1\n" % 
+                             (self.itypes[i], *self.positions[i]))
 
     def __mul__(self, magnification) -> 'AtomConfig' :
         """
@@ -446,6 +439,7 @@ class AtomConfig():
         self.moves     = atomconfig.moves
         return self
 
+
 class VATOM():
     """OUT.VATOM"""
     def __init__(self, filename=None, comment: str = "unkown eigen") -> None:
@@ -456,30 +450,28 @@ class VATOM():
 
     def read_vatom(self, filename) -> None:
         self.filename = os.path.abspath(filename)
-        io = open(filename, "r")
+        with open(filename, "r") as io:
+            natoms = int(io.readline().split()[0])
+            self.natoms = natoms
 
-        natoms = int(io.readline().split()[0])
-        self.natoms = natoms
-
-        itype_list      = np.zeros(natoms, dtype=np.int32)
-        position_list   = np.zeros((natoms, 3), dtype=np.float64)
-        vatom_list      = np.zeros((natoms), dtype=np.float64)
-        for i in range(natoms):
-            s = io.readline().split()[0:5]
-            itype_list[i]       = np.int32(s[0])
-            position_list[i]    = np.array([np.float64(i) for i in s[1:4]])
-            vatom_list[i]       = np.float64(s[4])
-        self.itypes     = itype_list
-        self.positions  = position_list
-        self.vatoms     = vatom_list
-
-        io.close()
+            itype_list      = np.zeros(natoms, dtype=np.int32)
+            position_list   = np.zeros((natoms, 3), dtype=np.float64)
+            vatom_list      = np.zeros((natoms), dtype=np.float64)
+            for i in range(natoms):
+                s = io.readline().split()[0:5]
+                itype_list[i]       = np.int32(s[0])
+                position_list[i]    = np.array([np.float64(i) for i in s[1:4]])
+                vatom_list[i]       = np.float64(s[4])
+            self.itypes     = itype_list
+            self.positions  = position_list
+            self.vatoms     = vatom_list
 
 
 class EIGEN():
     """
     OUT.EIGEN
-    this class is only for reading propose, but not for constructing from `eig=EIGEN();eig.eigenvals=...` or `EIGEN(eigenvals=...)`
+    this class is only for reading propose, but not for constructing from 
+    `eig=EIGEN();eig.eigenvals=...` or `EIGEN(eigenvals=...)`
 
     Attributes:
         eigenvals[islda, ikpt, iband]
@@ -496,24 +488,20 @@ class EIGEN():
 
     def read_eigen(self, filename: str) -> None:
         self.filename = os.path.abspath(filename)
-        io = open(filename, "br")
-
-        self.islda, self.nkpt, self.nband, \
-            self.nref_tot_8, self.natom, self.nnodes = read_fortran_binary_block(io, np.int32)
-        self.eigenvals   = np.zeros((self.islda, self.nkpt, self.nband), dtype=np.float64)
-        self.kpoints     = np.zeros((self.nkpt, 3),                      dtype=np.float64)
-        self.weighkpt    = np.zeros((self.nkpt),                         dtype=np.float64)
-        
-        for iislda in range(self.islda):
-            for ikpt in range(self.nkpt):
-                ak = self.kpoints[ikpt, :]
-                iislda_, ikpt_, self.weighkpt[ikpt], ak[0], ak[1], ak[2] = \
-                    read_fortran_binary_block_varioustype(
-                        io, np.int32, np.int32, np.float64, np.float64, np.float64, np.float64)
-                self.eigenvals[iislda, ikpt, :] = \
-                    read_fortran_binary_block(io, np.float64)
-                
-        io.close()
+        with open(filename, "br") as io:
+            self.islda, self.nkpt, self.nband, self.nref_tot_8, self.natom, self.nnodes = read_fortran_binary_block(io, np.int32)
+            self.eigenvals   = np.zeros((self.islda, self.nkpt, self.nband), dtype=np.float64)
+            self.kpoints     = np.zeros((self.nkpt, 3),                      dtype=np.float64)
+            self.weighkpt    = np.zeros((self.nkpt),                         dtype=np.float64)
+            
+            for iislda in range(self.islda):
+                for ikpt in range(self.nkpt):
+                    ak = self.kpoints[ikpt, :]
+                    iislda_, ikpt_, self.weighkpt[ikpt], ak[0], ak[1], ak[2] = \
+                        read_fortran_binary_block_varioustype(
+                            io, np.int32, np.int32, np.float64, np.float64, np.float64, np.float64)
+                    self.eigenvals[iislda, ikpt, :] = \
+                        read_fortran_binary_block(io, np.float64)
 
 
 class MaterialSystemInfo():

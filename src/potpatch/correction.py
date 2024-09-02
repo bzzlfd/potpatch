@@ -100,22 +100,22 @@ def gen_charge_correct(supclInfo: MaterialSystemInfo):
 
     # plus_V_single
     R_cutoff = Rmin  # TODO R_cutoff 为了那些有尾巴的函数准备; Rmin 切于 unit cell 的球半径, 作为一个参考
-    ## n = 1000 # TODO 把这个变成一个可控参数
-    ## # charge solid sphere
-    ## charge_shll = np.ndarray(4*n+1)
-    ## for i in range(len(charge_shll)):
-    ##     r = i*R_cutoff/(4*n)
-    ##     charge_shll[i] = charge_density(charge, r, Rmin) * 4 * np.pi * r**2
-    ## charge_sph = np.cumsum(simpson(R_cutoff/(4*n), charge_shll)) 
-    ## # electric field intensity
-    ## r = np.linspace(0,R_cutoff,num=len(charge_sph))
-    ## ele_fld = np.ndarray(len(charge_sph))
-    ## ele_fld[0] = 0
-    ## ele_fld[1:] = charge_sph[1:] / np.square(r[1:]) / epsilon # in a.u., 1/4πε_0==1
-    ## # potential
-    ## V_sph = np.cumsum(simpson(R_cutoff/(2*n), ele_fld[::-1]))
-    ## V_sph = V_sph[::-1] 
-    ## V_sph = V_sph + 1/R_cutoff * charge / epsilon
+    # # n = 1000 # TODO 把这个变成一个可控参数
+    # # # charge solid sphere
+    # # charge_shll = np.ndarray(4*n+1)
+    # # for i in range(len(charge_shll)):
+    # #     r = i*R_cutoff/(4*n)
+    # #     charge_shll[i] = charge_density(charge, r, Rmin) * 4 * np.pi * r**2
+    # # charge_sph = np.cumsum(simpson(R_cutoff/(4*n), charge_shll)) 
+    # # # electric field intensity
+    # # r = np.linspace(0,R_cutoff,num=len(charge_sph))
+    # # ele_fld = np.ndarray(len(charge_sph))
+    # # ele_fld[0] = 0
+    # # ele_fld[1:] = charge_sph[1:] / np.square(r[1:]) / epsilon # in a.u., 1/4πε_0==1
+    # # # potential
+    # # V_sph = np.cumsum(simpson(R_cutoff/(2*n), ele_fld[::-1]))
+    # # V_sph = V_sph[::-1] 
+    # # V_sph = V_sph + 1/R_cutoff * charge / epsilon
 
     def plus_V_single(suuuupclInfo: MaterialSystemInfo):
         """
@@ -137,9 +137,9 @@ def gen_charge_correct(supclInfo: MaterialSystemInfo):
                         if r > R_cutoff:
                             suuuupcl_mesh[i, j, k] += 1/r * charge / epsilon
                         else:
-                            ## dr = R_cutoff / n
-                            ## i = int(r/dr)
-                            ## (V_sph[i]*(r-i*dr)+V_sph[i+1]*((i+1)*dr-r)) / dr
+                            # # dr = R_cutoff / n
+                            # # i = int(r/dr)
+                            # # (V_sph[i]*(r-i*dr)+V_sph[i+1]*((i+1)*dr-r)) / dr
                             suuuupcl_mesh[i,j,k] += \
                                 (np.sinc(r/R_cutoff)/R_cutoff + 1/R_cutoff) * charge / epsilon
         _plus_V_single(suuuupclInfo.vr.mesh)
