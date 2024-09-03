@@ -42,7 +42,7 @@ def shift_twoAtomConfig(bulk_ac: AtomConfig,
             else:
                 assert abs(int(magM[i, i]) - magM[i, i]) < 1e-6
     mag = np.array([magM[i, i] for i in range(3)], dtype=np.int32)
-    print(f"I infer that the size of supercell is {mag.__str__()}")
+    print(f"I infer that the size of supercell is {','.join([str(i) for i in mag])}")
     
     shift_oneAtomConfig(supcl_ac, supcl_shift)
     shift_oneAtomConfig(bulk_ac, supcl_shift * mag)

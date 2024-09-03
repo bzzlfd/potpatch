@@ -66,19 +66,22 @@ def cli_arg_parse():
               "both bulk&supercell two atom.config(s)")
     parser_shift.add_argument(
          "-B", "--bulk", 
-         help='specify the bulk file name. ', 
+         help='specify the bulk file name. '
+              'output is the same filename suffixed by "_shift"', 
          default=None)
     parser_shift.add_argument(
          "-S", "--supcl", 
-         help='specify the supercell file name. ', 
+         help='specify the supercell file name. '
+              'output is the same filename suffixed by "_shift"', 
          default=None)
     parser_shift.add_argument(
          "-s", "--shift",
          help="specify the fractional position `shift` "
               "(e.g. `--shift 0.25 0.25 0.75`.) "
               "shift `[shift, shift, shift]` to [0, 0, 0]. "
-              "if both -B and -S are specified, it will be regarded "
-              "as supercell's shift, bulk's shift can be infered", 
+              "if both -B and -S are specified, it will be regarded as "
+              "supercell's `shift`, bulk's `shift` can be inferred from "
+              "the existing information", 
          type=float,
          nargs=3,
          required=True)
