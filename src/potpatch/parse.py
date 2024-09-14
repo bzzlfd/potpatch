@@ -58,6 +58,13 @@ def cli_arg_parse():
          type=int,
          default=[1, 1, 1],
          nargs=3)
+    parser_mksupcl.add_argument(
+        "-d", 
+        help='(for debugging) if specified, '
+             'change the "atom number" of frozen atoms to `OUTSIDER`', 
+        dest="outsider",
+        type=int,
+        default=None)
 
     # cli shift atom.config 
     parser_shift = subparsers.add_parser(
@@ -104,8 +111,10 @@ def cli_arg_parse():
         output       = args.output
         frozen_range = args.frozen_range
         size         = args.size
+        outsider     = args.outsider
         ret_nt = NameTuple(input_=input_, output=output,
-                           frozen_range=frozen_range, size=size)
+                           frozen_range=frozen_range, size=size, 
+                           outsider=outsider)
     elif args.func == "shift":
         PROG = "shift"
         bulk  = args.bulk

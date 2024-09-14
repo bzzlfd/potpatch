@@ -210,7 +210,7 @@ class VR():
             self.lattice = Lattice(AL, self.fmt2unit[vr_fmt], 
                                    fromwhere=self._latticeflag)
 
-            self.mesh = np.ndarray(n1*n2*n3)
+            self.mesh = np.zeros(n1*n2*n3, dtype=np.float64)
             nr = n1*n2*n3//nnodes
             for i in range(0, nnodes):
                 self.mesh[i*nr: (i+1)*nr] = read_fortran_binary_block(io, np.float64)[0:nr]
@@ -241,7 +241,7 @@ class VR():
         assert self.mesh.size % nnodes == 0, \
             f"vr.mesh.size({self.mesh.size}) can't be devided evenly by nnodes({nnodes})"
         assert self.mesh.size / nnodes <= (128*1024*1024), \
-            f"vr.mesh.size({self.mesh.size}) / nnodes({nnodes}) is larger than 128MiB"
+            f"vr.mesh.size({self.mesh.size}) / nnodes({nnodes}) is larger than 128M"
 
         with open(filename, "bw") as io:
             # meta data

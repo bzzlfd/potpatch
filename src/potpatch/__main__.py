@@ -84,6 +84,8 @@ supercell:
     minus_V_periodic, plus_V_single = gen_charge_correct(supclInfo)
     minus_V_periodic(supclInfo)
     edge_match_correct(supclInfo, bulkInfo)
+    if (debg := False):
+        supclInfo.vr.write_vr(filename="supcl.VR.debug")
     suuuupclInfo = patch(supclInfo, bulkInfo, supcl_size, target_size)
     plus_V_single(suuuupclInfo)
 
@@ -96,6 +98,7 @@ def mksupcl(args):
     output          = args.output
     size            = args.size 
     frozen_range    = args.frozen_range 
+    outsider        = args.outsider
 
     bulk_ac = AtomConfig(filename=input_)
     if output is None:
@@ -104,7 +107,7 @@ def mksupcl(args):
         f"-s {size} -r {frozen_range} # pwd={getcwd()}"
     
     supcl_ac = make_supercell(bulk_ac, size)
-    supcl_ac = modify_supercell(supcl_ac, frozen_range)
+    supcl_ac = modify_supercell(supcl_ac, frozen_range, mv2outsider=outsider)
     supcl_ac.write_atoms(output, comment=comment)
 
 

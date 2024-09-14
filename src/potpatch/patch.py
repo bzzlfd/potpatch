@@ -88,14 +88,14 @@ def inspect_ingredient(supclInfo: MaterialSystemInfo,
         nwarn, err = 0, False
         for pos1 in supclAtom_1.positions:
             if closed_to_edge(supclAtom_1.lattice, pos1, frozen_confirm):
-                if min(sum(np.abs(pos1-pos2)) for pos2 in supclAtom_2.positions) != 0:
+                if min(sum(np.abs(pos1-pos2)) for pos2 in supclAtom_2.positions) > 1e-8:
                     err = True
                     l2 = [sum(np.abs(pos1-pos2)) for pos2 in supclAtom_2.positions] 
                     pos2_index = l2.index(sorted(l2)[0])
                     pos2 = supclAtom_2.positions[pos2_index]
                     warnings.warn(f"{pos1}(from bulk make_supercell) and {pos2}(from supcl) doesn't coincide ")
                     nwarn += 1
-        if err:
+        if not err:
             print("no error")
         else:
             print(f"{nwarn} warnings")
