@@ -3,12 +3,25 @@ This is an implementation of the potentail patching, which is a semiconductor sh
 
 
 
-## Installation
-### Directly with pip
+## Installation (with `pip`)
+### Directly via the network (the machine has access to Github)
+```bash
+pip3 install git+https://github.com/bzzlfd/potpatch.git
+
+# try it out 
+potpatch --version
+```
+
+or specify a branch to get the latest (in-development) features, e.g. 
+```bash
+pip3 install git+https://github.com/bzzlfd/potpatch.git@im_pos
+```
+
+### Download and install (the network is accessible except for GitHub)
 ```bash
 # download and enter the `potpatch` project directory, 
 # so that `pip` will find `potpatch` project file `pyproject.toml` at current directory `.`
-pip3 install .
+pip3 install <local potpatch project path>
 
 # try it out 
 potpatch --version
@@ -16,7 +29,7 @@ potpatch --version
 
 ### For development
 ```bash
-pip3 install -e .
+pip3 install -e <local potpatch project path>
 ```
 
 ### Some suggestions on offline machine installation
