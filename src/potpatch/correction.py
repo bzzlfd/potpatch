@@ -6,6 +6,7 @@ from numba import jit, guvectorize
 
 from potpatch.utils import simpson, timing
 from potpatch.constant import HA, EPSILON0, BOHR
+from potpatch.datatype import REAL_8
 from potpatch.objects import Lattice, VR, AtomConfig, MaterialSystemInfo
 
 
@@ -51,7 +52,7 @@ def gen_charge_correct(supclInfo: MaterialSystemInfo):
 
     # minus_V_periodic
     little_cube = np.array([AL[i]/n123[i] for i in range(3)])
-    mesh_rho = np.ndarray(n123, dtype=np.float64)
+    mesh_rho = np.ndarray(n123, dtype=REAL_8)
 
     @timing()
     @jit(nopython=True)
@@ -155,7 +156,7 @@ def edge_match_correct(supclInfo: MaterialSystemInfo, bulkInfo: MaterialSystemIn
     n1, n2, n3 = supclmesh.shape
     n1b, n2b, n3b = bulkmesh.shape
     num = n1*n2+n2*n3+n3*n1-(n1+n2+n3)+1
-    diff = np.ndarray(num, dtype=np.float64)
+    diff = np.ndarray(num, dtype=REAL_8)
     n = 0
     for i in range(n1):
         for j in range(n2):

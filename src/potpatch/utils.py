@@ -7,9 +7,12 @@ import numpy as np
 # =============================================
 # fortran binary io
 # =============================================
+from potpatch.datatype import REAL_8, INTEGER
+
+
 def read_fortran_binary_block_arraytype(io, dtype: np.dtype):
     # TODO 用 memoryview 实现 multi data type
-    len_Byte = np.fromfile(io, np.int32, 1)[0]
+    len_Byte = np.fromfile(io, INTEGER, 1)[0]
     sizeofd = np.dtype(dtype).itemsize
     assert len_Byte % sizeofd == 0, dedent(f"\
         the length({len_Byte}) of fortran data block is not divisible \
@@ -20,14 +23,14 @@ def read_fortran_binary_block_arraytype(io, dtype: np.dtype):
     data = np.fromfile(io, dtype, count=count)
     # "end read"
 
-    assert len_Byte == np.fromfile(io, np.int32, 1)[0], "\
+    assert len_Byte == np.fromfile(io, INTEGER, 1)[0], "\
         there is something wrong in Fortran binary file format"
     return data
 
 
 def read_fortran_binary_block_varioustype(io, *dtypes):
     # TODO 用 memoryview 实现 multi data type
-    len_Byte = np.fromfile(io, np.int32, 1)[0]
+    len_Byte = np.fromfile(io, INTEGER, 1)[0]
     sum_sizeofd = sum(
         (np.dtype(dtype).itemsize)
         for dtype in dtypes
@@ -43,7 +46,7 @@ def read_fortran_binary_block_varioustype(io, *dtypes):
     data = tuple(data)
     # "end read"
 
-    assert len_Byte == np.fromfile(io, np.int32, 1)[0], "\
+    assert len_Byte == np.fromfile(io, INTEGER, 1)[0], "\
         there is something wrong in Fortran binary file format"
     return data
 
@@ -65,7 +68,7 @@ def write_fortran_binary_block(io, *datas):
             "data, which is important in fortran binary file read/write."
         sizeofd = data.dtype.itemsize
         len_Byte += sizeofd * data.size
-    len_Byte = np.int32(len_Byte)
+    len_Byte = INTEGER(len_Byte)
 
     len_Byte.tofile(io)
     for data in datas:
@@ -78,7 +81,7 @@ def write_fortran_binary_block(io, *datas):
 # =============================================
 # numerical method
 # =============================================
-def simpson(dx: np.float64, y: np.ndarray) -> np.ndarray:
+def simpson(dx: REAL_8, y: np.ndarray) -> np.ndarray:
     """
     input list length must be odd, The corresponding index::
 

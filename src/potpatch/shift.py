@@ -4,6 +4,7 @@ from numba import jit, guvectorize
 
 from potpatch.objects import MaterialSystemInfo, AtomConfig, VR
 from potpatch.utils import timing, gen_counter
+from potpatch.datatype import INTEGER
 
 shift_operation_counter = gen_counter()
 
@@ -41,7 +42,7 @@ def shift_twoAtomConfig(bulk_ac: AtomConfig,
                 assert abs(magM[i, j]) < 1e-6
             else:
                 assert abs(int(magM[i, i]) - magM[i, i]) < 1e-6
-    mag = np.array([magM[i, i] for i in range(3)], dtype=np.int32)
+    mag = np.array([magM[i, i] for i in range(3)], dtype=INTEGER)
     print(f"I infer that the size of supercell is {','.join([str(i) for i in mag])}")
     
     shift_oneAtomConfig(supcl_ac, supcl_shift)

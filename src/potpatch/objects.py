@@ -8,6 +8,7 @@ from potpatch.utils import (read_fortran_binary_block,
                             read_fortran_binary_block_varioustype, 
                             write_fortran_binary_block)
 from potpatch.constant import BOHR, HA, EPSILON0
+from potpatch.datatype import INTEGER, REAL_8
 
 
 """
@@ -113,7 +114,7 @@ class Lattice():
         AL1 = self.in_unit("angstrom")
         AL2 = lattice.in_unit("angstrom")
 
-        div3 = np.zeros(3, dtype=np.int32)
+        div3 = np.zeros(3, dtype=INTEGER)
         for i in range(3):
             _div = [1145, 1419, 19810]
             for j in range(3):
@@ -189,7 +190,7 @@ class VR():
     @property
     def n123(self):
         assert self.mesh is not None, "the current `mesh` attribute in this instance is `None`"
-        return np.array(self.mesh.shape, dtype=np.int32)
+        return np.array(self.mesh.shape, dtype=INTEGER)
 
     def revise_keyattribute_type(self):
         # TODO 看哪些定义哪些没定义
@@ -200,26 +201,26 @@ class VR():
         self.filename = os.path.abspath(filename)
         self.vr_fmt = vr_fmt
         with open(filename, "br") as io:
-            n1, n2, n3, nnodes = read_fortran_binary_block(io, np.int32)
+            n1, n2, n3, nnodes = read_fortran_binary_block(io, INTEGER)
             assert (n1*n2*n3) % nnodes == 0, "`n1*n2*n3` is not divisible by `nnodes`"
             self.nnodes = nnodes
 
-            AL = read_fortran_binary_block(io, np.float64)
+            AL = read_fortran_binary_block(io, REAL_8)
             AL = np.reshape(AL, (3, 3))
             self._latticeflag = f"({self.comment}) read fromfile({self.filename})"
             self.lattice = Lattice(AL, self.fmt2unit[vr_fmt], 
                                    fromwhere=self._latticeflag)
 
-            self.mesh = np.zeros(n1*n2*n3, dtype=np.float64)
+            self.mesh = np.zeros(n1*n2*n3, dtype=REAL_8)
             nr = n1*n2*n3//nnodes
             for i in range(0, nnodes):
-                self.mesh[i*nr: (i+1)*nr] = read_fortran_binary_block(io, np.float64)[0:nr]
+                self.mesh[i*nr: (i+1)*nr] = read_fortran_binary_block(io, REAL_8)[0:nr]
             self.mesh = np.reshape(self.mesh, (n1, n2, n3))
 
     def write_vr(self, filename: str, vr_fmt="PWmat", 
                  nnodes: int | None = None):
         """
-        nnodes will be converted into `np.int32` when writing into file
+        nnodes will be converted into `INTEGER` when writing into file
         """
         if nnodes is None:
             nnodes = self.mesh.size // (128*1024*1024)
@@ -246,7 +247,7 @@ class VR():
         with open(filename, "bw") as io:
             # meta data
             write_fortran_binary_block(
-                io, np.array(self.mesh.shape, dtype=np.int32), np.int32(nnodes))
+                io, np.array(self.mesh.shape, dtype=INTEGER), INTEGER(nnodes))
             # AL data
             AL = self.lattice.in_unit(self.fmt2unit[vr_fmt])
             AL1d = np.reshape(AL, AL.size)
@@ -357,21 +358,21 @@ class AtomConfig():
                 io.readline()
             AL = np.zeros((3, 3))
             for i in range(3):
-                AL[i] = np.array([np.float64(i) for i in io.readline().split()[0:3]])
+                AL[i] = np.array([REAL_8(i) for i in io.readline().split()[0:3]])
             self._latticeflag = f"({self.comment}) read fromfile({self.filename})"
             self.lattice = Lattice(AL, self.fmt2unit[atoms_fmt], 
                                    fromwhere=self._latticeflag)
 
             if atoms_fmt == "PWmat": 
                 io.readline()
-            itype_list = np.zeros(natoms, dtype=np.int32)
-            position_list = np.zeros((natoms, 3), dtype=np.float64)
-            move_list = np.zeros((natoms, 3), dtype=np.int32)
+            itype_list = np.zeros(natoms, dtype=INTEGER)
+            position_list = np.zeros((natoms, 3), dtype=REAL_8)
+            move_list = np.zeros((natoms, 3), dtype=INTEGER)
             for i in range(natoms):
                 s = io.readline().split()[0:7]
-                itype_list[i] = np.int32(s[0])
-                position_list[i] = np.array([np.float64(i) for i in s[1:4]])
-                move_list[i] = np.array([np.int32(i) for i in s[4:7]])
+                itype_list[i] = INTEGER(s[0])
+                position_list[i] = np.array([REAL_8(i) for i in s[1:4]])
+                move_list[i] = np.array([INTEGER(i) for i in s[4:7]])
             self.itypes     = itype_list
             self.positions  = position_list
             self.moves      = move_list
@@ -454,14 +455,14 @@ class VATOM():
             natoms = int(io.readline().split()[0])
             self.natoms = natoms
 
-            itype_list      = np.zeros(natoms, dtype=np.int32)
-            position_list   = np.zeros((natoms, 3), dtype=np.float64)
-            vatom_list      = np.zeros((natoms), dtype=np.float64)
+            itype_list      = np.zeros(natoms, dtype=INTEGER)
+            position_list   = np.zeros((natoms, 3), dtype=REAL_8)
+            vatom_list      = np.zeros((natoms), dtype=REAL_8)
             for i in range(natoms):
                 s = io.readline().split()[0:5]
-                itype_list[i]       = np.int32(s[0])
-                position_list[i]    = np.array([np.float64(i) for i in s[1:4]])
-                vatom_list[i]       = np.float64(s[4])
+                itype_list[i]       = INTEGER(s[0])
+                position_list[i]    = np.array([REAL_8(i) for i in s[1:4]])
+                vatom_list[i]       = REAL_8(s[4])
             self.itypes     = itype_list
             self.positions  = position_list
             self.vatoms     = vatom_list
@@ -489,19 +490,19 @@ class EIGEN():
     def read_eigen(self, filename: str) -> None:
         self.filename = os.path.abspath(filename)
         with open(filename, "br") as io:
-            self.islda, self.nkpt, self.nband, self.nref_tot_8, self.natom, self.nnodes = read_fortran_binary_block(io, np.int32)
-            self.eigenvals   = np.zeros((self.islda, self.nkpt, self.nband), dtype=np.float64)
-            self.kpoints     = np.zeros((self.nkpt, 3),                      dtype=np.float64)
-            self.weighkpt    = np.zeros((self.nkpt),                         dtype=np.float64)
+            self.islda, self.nkpt, self.nband, self.nref_tot_8, self.natom, self.nnodes = read_fortran_binary_block(io, INTEGER)
+            self.eigenvals   = np.zeros((self.islda, self.nkpt, self.nband), dtype=REAL_8)
+            self.kpoints     = np.zeros((self.nkpt, 3),                      dtype=REAL_8)
+            self.weighkpt    = np.zeros((self.nkpt),                         dtype=REAL_8)
             
             for iislda in range(self.islda):
                 for ikpt in range(self.nkpt):
                     ak = self.kpoints[ikpt, :]
                     iislda_, ikpt_, self.weighkpt[ikpt], ak[0], ak[1], ak[2] = \
                         read_fortran_binary_block_varioustype(
-                            io, np.int32, np.int32, np.float64, np.float64, np.float64, np.float64)
+                            io, INTEGER, INTEGER, REAL_8, REAL_8, REAL_8, REAL_8)
                     self.eigenvals[iislda, ikpt, :] = \
-                        read_fortran_binary_block(io, np.float64)
+                        read_fortran_binary_block(io, REAL_8)
 
 
 class MaterialSystemInfo():

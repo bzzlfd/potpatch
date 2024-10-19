@@ -1,6 +1,7 @@
 import numpy as np
 
 from potpatch.objects import AtomConfig, Lattice
+from potpatch.datatype import REAL_8, INTEGER
 
 
 def make_supercell(bulkAtom: AtomConfig, m123) -> AtomConfig:
@@ -28,7 +29,7 @@ def modify_supercell(supclAtom: AtomConfig,
             rtac.moves[i] = np.array([0, 0, 0])
             if mv2outsider is not None:
                 assert int(mv2outsider) == mv2outsider
-                rtac.itypes[i] = np.int32(mv2outsider)
+                rtac.itypes[i] = INTEGER(mv2outsider)
             count += 1
 
     rtac.revise_atomsposition()

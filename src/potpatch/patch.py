@@ -7,6 +7,7 @@ from numba import jit, guvectorize
 from potpatch.objects import Lattice, VR, AtomConfig, MaterialSystemInfo
 from potpatch.supercell import make_supercell, modify_supercell, closed_to_edge
 from potpatch.utils import timing
+from potpatch.datatype import REAL_8, INTEGER
 
 
 def inspect_ingredient(supclInfo: MaterialSystemInfo,
@@ -25,7 +26,7 @@ def inspect_ingredient(supclInfo: MaterialSystemInfo,
     # supcl size inference
     supcl_vrsize = supclInfo.vr.n123 / bulkInfo.vr.n123 
     # supcl size ?integer mag
-    if not all(np.abs(supcl_vrsize - np.int32(supcl_vrsize)) < 1e-6):
+    if not all(np.abs(supcl_vrsize - INTEGER(supcl_vrsize)) < 1e-6):
         raise ValueError(f"""
                          magnifacation between the two VR is not integer
                          {supclInfo.vr.n123=}
@@ -40,7 +41,7 @@ def inspect_ingredient(supclInfo: MaterialSystemInfo,
                 bulkInfo.lattice * mag({lattice_mulmag.in_unit("angstrom")})
                 """)
 
-    supcl_size = np.int32(supcl_vrsize)
+    supcl_size = INTEGER(supcl_vrsize)
 
     if not all(bulkInfo.vr.n123 % 2 == 0) or \
        not all(supclInfo.vr.n123 % 2 == 0):
@@ -85,15 +86,19 @@ def inspect_ingredient(supclInfo: MaterialSystemInfo,
         supclAtom_1 = make_supercell(bulkInfo.atomconfig, supcl_size)
         supclAtom_1 = modify_supercell(supclAtom_1, frozen_confirm)
         supclAtom_2 = supclInfo.atomconfig
+        AL = supclInfo.lattice.in_unit("angstrom")
         nwarn, err = 0, False
         for pos1 in supclAtom_1.positions:
             if closed_to_edge(supclAtom_1.lattice, pos1, frozen_confirm):
-                if min(sum(np.abs(pos1-pos2)) for pos2 in supclAtom_2.positions) > 1e-8:
+                if min(sum(np.abs(pos1-pos2)) for pos2 in supclAtom_2.positions) != 0:  # > 1e-8:
                     err = True
                     l2 = [sum(np.abs(pos1-pos2)) for pos2 in supclAtom_2.positions] 
                     pos2_index = l2.index(sorted(l2)[0])
                     pos2 = supclAtom_2.positions[pos2_index]
-                    warnings.warn(f"{pos1}(from bulk make_supercell) and {pos2}(from supcl) doesn't coincide ")
+                    warnings.warn(dedent(f"""
+                        {pos1}(from bulk make_supercell) and {pos2}(from supcl) doesn't coincide.
+                        {(pos2-pos1)@AL=} angstrom
+                        """))
                     nwarn += 1
         if not err:
             print("no error")
