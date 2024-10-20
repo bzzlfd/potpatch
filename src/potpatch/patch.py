@@ -26,7 +26,7 @@ def inspect_ingredient(supclInfo: MaterialSystemInfo,
     # supcl size inference
     supcl_vrsize = supclInfo.vr.n123 / bulkInfo.vr.n123 
     # supcl size ?integer mag
-    if not all(np.abs(supcl_vrsize - INTEGER(supcl_vrsize)) < 1e-6):
+    if not all(np.abs(supcl_vrsize - round(supcl_vrsize, 0)) < 1e-6):
         raise ValueError(f"""
                          magnifacation between the two VR is not integer
                          {supclInfo.vr.n123=}

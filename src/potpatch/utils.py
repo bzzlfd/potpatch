@@ -68,6 +68,8 @@ def write_fortran_binary_block(io, *datas):
             "data, which is important in fortran binary file read/write."
         sizeofd = data.dtype.itemsize
         len_Byte += sizeofd * data.size
+    assert len_Byte < 2**31, \
+        "the length of fortran binary data record block is too large"
     len_Byte = INTEGER_4(len_Byte)
 
     len_Byte.tofile(io)

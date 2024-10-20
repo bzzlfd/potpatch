@@ -103,8 +103,8 @@ def mksupcl(args):
     bulk_ac = AtomConfig(filename=input_)
     if output is None:
         output = f"atom.config_mksupcl_{bulk_ac.natoms*prod(size)}"
-    comment = f"potpatch mksupcl -i {input_} -o {output} " + \
-        f"-s {size} -r {frozen_range} # pwd={getcwd()}"
+    comment = f"potpatch mksupcl -i {input_} -o {output} -r {frozen_range}" + \
+        f" -s {' '.join(str(f) for f in size)} # pwd={getcwd()}"
     
     supcl_ac = make_supercell(bulk_ac, size)
     supcl_ac = modify_supercell(supcl_ac, frozen_range, mv2outsider=outsider)

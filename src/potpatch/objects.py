@@ -86,7 +86,7 @@ class Lattice():
         return a new Lattice
         """
         for i in list(magnification):
-            assert i == int(i), "the magnification is not (all) integer "
+            assert i == round(i, 0), "the magnification is not (all) integer "
         assert len(magnification) == 3, f"length of magnification must be 3, but not {len(magnification)}"
         AL = np.zeros((3, 3))
         for i in range(3):
@@ -129,7 +129,7 @@ class Lattice():
             _div = [i for i in _div if not np.isnan(i)]
             for j in range(len(_div)):
                 assert abs(_div[0] - _div[j]) < 1e-6, f"a{i+1}({AL1[i], AL2[i]})Å in the two lattice is not parallel"
-            if not _div[0] == int(_div[0]):
+            if not _div[0] == round(_div[0], 0):
                 warnings.warn(f"the magnification of a{i+1}({AL1[i], AL2[i]})Å between the two lattices is not integer ")
             div3[i] = _div[0]
         return div3
@@ -218,14 +218,14 @@ class VR():
             self.mesh = np.reshape(self.mesh, (n1, n2, n3))
 
     def write_vr(self, filename: str, vr_fmt="PWmat", 
-                 nnodes: int | None = None):
+                 nnodes: int | None = None, nnodes_base: int = 1):
         """
         nnodes will be converted into `INTEGER` when writing into file
         """
         if nnodes is None:
             nnodes = self.mesh.size // (128*1024*1024)
             nnodes = 1 if nnodes == 0 else nnodes
-            while self.mesh.size % nnodes != 0:
+            while self.mesh.size % nnodes != 0 or nnodes % nnodes_base != 0:
                 nnodes += 1
         # {mnodes} processors, {nnodes} vr slices
         # in Escan pot_input, 
@@ -241,6 +241,8 @@ class VR():
         #         nnodes += 1
         assert self.mesh.size % nnodes == 0, \
             f"vr.mesh.size({self.mesh.size}) can't be devided evenly by nnodes({nnodes})"
+        assert nnodes % nnodes_base == 0, \
+            f"nnodes({nnodes}) is not divisible by nnodes_base({nnodes_base})"
         assert self.mesh.size / nnodes <= (128*1024*1024), \
             f"vr.mesh.size({self.mesh.size}) / nnodes({nnodes}) is larger than 128M"
 
