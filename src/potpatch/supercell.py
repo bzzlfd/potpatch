@@ -12,7 +12,8 @@ def make_supercell(bulkAtom: AtomConfig, m123) -> AtomConfig:
 
 
 def modify_supercell(supclAtom: AtomConfig,
-                     frozen_edge_width=1.0, mv2outsider=None) -> AtomConfig:
+                     frozen_edge_width=1.0, 
+                     mv2outsider=None) -> AtomConfig:
     """
     for supercell RELAX job: freeze atoms whose positions are closed to
     the pathcing edge(interface between supercell and bulk)
@@ -31,6 +32,7 @@ def modify_supercell(supclAtom: AtomConfig,
                 assert int(mv2outsider) == mv2outsider
                 rtac.itypes[i] = INTEGER(mv2outsider)
             count += 1
+    rtac._natoms_frozen = count
 
     rtac.revise_atomsposition()
     rtac.sort_atomposition()
