@@ -92,6 +92,35 @@ def cli_arg_parse():
          type=float,
          nargs=3,
          required=True)
+    
+    # cli check 
+    parser_check = subparsers.add_parser(
+         "check", 
+         help="scripts for checking")
+    check_subparsers = parser_check.add_subparsers(
+         help='check-sub-command help', 
+         dest="check_func")
+
+    ## cli-check atompos
+    parser_check_atompos = check_subparsers.add_parser(
+         "atompos", 
+         help="check if the two atom positions are consistent with the "
+              "supercell size and frozen range")
+    parser_check_atompos.add_argument(
+         "-B", "--bulk", 
+         help='specify the bulk file name. ',
+         required=True)
+    parser_check_atompos.add_argument(
+         "-S", "--supcl", 
+         help='specify the supercell file name. ',
+         required=True)
+    parser_check_atompos.add_argument(
+         "-T", "--tolerance",
+         help="specify the tolerance for checking the consistency of "
+              "the two atom positions (angstrom). "
+              "default is `1E-6`",
+         type=float,
+         default=1E-6,) 
 
     # parse_args
     args = parser_potpatch.parse_args()
@@ -128,6 +157,15 @@ def cli_arg_parse():
         else:
             count = 2
         ret_nt = NameTuple(count=count, bulk=bulk, supcl=supcl, shift=shift)
+    elif args.func == "check":
+        if args.check_func == "atompos":
+            PROG = "check_atompos"
+            bulk  = args.bulk
+            supcl = args.supcl
+            tolerance = args.tolerance
+            ret_nt = NameTuple(bulk=bulk, supcl=supcl, tol=tolerance)
+        else:
+            raise ValueError(f'Invalid check sub-command {args.check_func}')
     else:
         raise ValueError(f'Invalid command {args.func}')
 
@@ -173,6 +211,8 @@ def file_input_parse(PROG, args):
     elif PROG == "mksupcl":
         ret_nt = args
     elif PROG == "shift":
+        ret_nt = args
+    elif PROG == "check_atompos":
         ret_nt = args
     else:
         assert False, f"Invalid PROG {PROG}"

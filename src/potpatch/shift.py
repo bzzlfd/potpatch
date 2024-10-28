@@ -2,7 +2,8 @@ import numpy as np
 from numpy import abs, exp, pi
 from numba import jit, guvectorize
 
-from potpatch.objects import MaterialSystemInfo, AtomConfig, VR
+from potpatch.objects import MaterialSystemInfo, AtomConfig, VR, Lattice
+from potpatch.supercell import infer_supercell_size
 from potpatch.utils import timing, gen_counter
 from potpatch.datatype import INTEGER
 
@@ -29,22 +30,14 @@ def shift_twoAtomConfig(bulk_ac: AtomConfig,
     shift `bulk_ac`  *fractional* point `bulk_shift`  to `(0, 0, 0)` 
     """
     if shift_operation_counter() == 1: 
-        print("...", f"hint: shift supercell *fractional* position `shift` to `[0,0,0]`")
+        print("... hint: shift supercell *fractional* position"
+              " `shift` to `[0,0,0]`")
     assert np.shape(supcl_shift) == np.zeros(3).shape
 
     # infer the supercell size 
-    AL_b = bulk_ac.lattice.in_unit("angstrom")
-    AL_s = supcl_ac.lattice.in_unit("angstrom")
-    magM = AL_s @ np.linalg.inv(AL_b)
-    for i in range(3):
-        for j in range(3):
-            if i != j:
-                assert abs(magM[i, j]) < 1e-6, f"{abs(magM[i, j])=}"
-            else: 
-                assert abs(magM[i, i] - round(magM[i, i], 0)) < 1e-6, \
-                    f"{abs(magM[i, i] - round(magM[i, i], 0))=}"
-    mag = np.array([round(magM[i, i], 0) for i in range(3)], dtype=INTEGER)
-    print(f"I infer that the size of supercell is {','.join([str(i) for i in mag])}")
+    mag = infer_supercell_size(bulk_ac.lattice, supcl_ac.lattice)
+    print("I infer that the size of supercell is "
+          f"{','.join([str(i) for i in mag])}")
     
     shift_oneAtomConfig(supcl_ac, supcl_shift)
     shift_oneAtomConfig(bulk_ac, supcl_shift * mag)

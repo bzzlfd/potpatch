@@ -398,10 +398,10 @@ class AtomConfig():
                 io.write(" Position, move_x, move_y, move_z\n")
             for i in range(self.natoms):
                 if atoms_fmt == "PWmat":
-                    io.write("%6d%17.9f%17.9f%17.9f   %1d %1d %1d\n" % 
+                    io.write("%6d %20.17f %20.17f %20.17f    %1d %1d %1d\n" % 
                              (self.itypes[i], *self.positions[i], *self.moves[i]))
                 elif atoms_fmt == "Escan":
-                    io.write("%6d%17.9f%17.9f%17.9f   0 1\n" % 
+                    io.write("%6d %20.17f %20.17f %20.17f    0 1\n" % 
                              (self.itypes[i], *self.positions[i]))
 
     def __mul__(self, magnification) -> 'AtomConfig' :

@@ -17,6 +17,7 @@ from potpatch.patch import (patch, patch_vr, patch_atom, patch_atom_v2,
 
 from potpatch.supercell import make_supercell, modify_supercell
 from potpatch.shift import shift_oneAtomConfig, shift_twoAtomConfig
+from potpatch.check_atompos import check_atompos_consistency
 from potpatch.parse import cli_arg_parse, file_input_parse
 
 
@@ -29,6 +30,8 @@ def main():
         mksupcl(args)
     elif PROG == "shift":
         shift(args)
+    elif PROG == "check_atompos":
+        check_atompos(args)
     else:
         assert False, f"Invalid PROG {PROG}"
 
@@ -134,6 +137,16 @@ def shift(args):
         shift_twoAtomConfig(bulk_ac, supcl_ac, shift)
         bulk_ac.write_atoms(bulk_ac.filename + "_shift", comment=comment)
         supcl_ac.write_atoms(supcl_ac.filename + "_shift", comment=comment)
+
+
+def check_atompos(args):
+    bulk_ac = AtomConfig(filename=args.bulk)
+    supcl_ac = AtomConfig(filename=args.supcl)
+    nwarns,  max_dist = check_atompos_consistency(bulk_ac, supcl_ac, tol=args.tol)
+    if nwarns == 0:
+        print(f"No atom position inconsistency found (max_dist={max_dist} angstrom).")
+    else:
+        print(f"{nwarns} atom position inconsistency found (max_dist={max_dist} angstrom).")
 
 
 if __name__ == "__main__":

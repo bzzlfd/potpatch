@@ -4,6 +4,24 @@ from potpatch.objects import AtomConfig, Lattice
 from potpatch.datatype import REAL_8, INTEGER
 
 
+def infer_supercell_size(bulk: Lattice, supcl: Lattice):
+    "infer the size of supercell from bulk and supercell *lattices* only"
+    AL_b = bulk.in_unit("angstrom")
+    AL_s = supcl.in_unit("angstrom")
+    magM = AL_s @ np.linalg.inv(AL_b)
+    
+    for i in range(3):
+        for j in range(3):
+            if i != j:
+                assert abs(magM[i, j]) < 1e-6, f"{abs(magM[i, j]) = }"
+            else:
+                assert abs(magM[i, i] - round(magM[i, i], 0)) < 1e-6, \
+                    f"{abs(magM[i, i] - round(magM[i, i], 0)) = }"
+    
+    mag = np.array([round(magM[i, i], 0) for i in range(3)], dtype=np.int64)
+    return mag
+
+
 def make_supercell(bulkAtom: AtomConfig, m123) -> AtomConfig:
     "``m123`` should be a tuple contains 3 integer numbers, e.g. ``(4,4,4)``"
     supclAtom = bulkAtom * m123
