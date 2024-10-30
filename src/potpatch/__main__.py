@@ -112,7 +112,10 @@ def mksupcl(args):
     
     comment = f"/{supcl_ac._natoms_frozen} atoms frozen/ " + \
         f"potpatch mksupcl -i {input_} -o {output} -r {frozen_range}" + \
-        f" -s {' '.join(str(f) for f in size)} # pwd={getcwd()}"
+        f" -s {' '.join(str(f) for f in size)} "
+    comment += f"-d {outsider} " if outsider is not None else ""
+    comment += f"# pwd={getcwd()}"
+
     supcl_ac.write_atoms(output, comment=comment)
 
 

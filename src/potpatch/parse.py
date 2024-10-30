@@ -101,7 +101,7 @@ def cli_arg_parse():
          help='check-sub-command help', 
          dest="check_func")
 
-    ## cli-check atompos
+    # # cli-check atompos
     parser_check_atompos = check_subparsers.add_parser(
          "atompos", 
          help="check if the two atom positions are consistent with the "
