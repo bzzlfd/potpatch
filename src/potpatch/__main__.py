@@ -58,29 +58,26 @@ def potpatch(args):
     
     supcl_size = inspect_ingredient(supclInfo, bulkInfo, size_confirm=supcl_size, frozen_confirm=frozen_range)
     if args.onlyinspect:
-        space4 = " "*4
         print(
-        # TODO 这么写太丑了
-f"""
-bulk:
-    lattice: (in angstrom)
-{indent(f"{bulkInfo.lattice.in_unit('angstrom').__str__()}", space4*2)}
-    VR({bulkInfo.vr.filename}):
-{indent(f"n123: {bulkInfo.vr.n123}", space4*2)}
-{indent(f"nnodes: {bulkInfo.vr.nnodes}", space4*2)}
-    atom.config({bulkInfo.atomconfig.filename}):
-supercell:
-    size: {supcl_size}
-    lattice: (in angstrom)
-{indent(f"{supclInfo.lattice.in_unit('angstrom').__str__()}", space4*2)}
-    VR({supclInfo.vr.filename}):
-{indent(f"n123: {supclInfo.vr.n123}", space4*2)}
-{indent(f"nnodes: {supclInfo.vr.nnodes}", space4*2)}
-    atom.config({supclInfo.atomconfig.filename}):
-    charge: {supclInfo.charge}
-    charge_pos: {supclInfo.charge_pos}
-    epsilon: {supclInfo.epsilon}
-"""
+            r"bulk:",
+            r"    lattice: (in angstrom)",
+            indent(f"{bulkInfo.lattice.in_unit('angstrom').__str__()}", " "*8),
+            f"    VR({bulkInfo.vr.filename}):",
+            f"        n123: {bulkInfo.vr.n123}",
+            f"        nnodes: {bulkInfo.vr.nnodes}",
+            f"    atom.config({bulkInfo.atomconfig.filename}):",
+            r"supercell:",
+            f"    size: {supcl_size}",
+            r"    lattice: (in angstrom)",
+            indent(f"{supclInfo.lattice.in_unit('angstrom').__str__()}", " "*8),
+            f"    VR({supclInfo.vr.filename}):",
+            f"        n123: {supclInfo.vr.n123}",
+            f"        nnodes: {supclInfo.vr.nnodes}",
+            f"    atom.config({supclInfo.atomconfig.filename}):",
+            f"    charge: {supclInfo.charge}",
+            f"    charge_pos: {supclInfo.charge_pos}",
+            f"    epsilon: {supclInfo.epsilon}",
+            sep="\n"
         )
         return
     
@@ -145,11 +142,14 @@ def shift(args):
 def check_atompos(args):
     bulk_ac = AtomConfig(filename=args.bulk)
     supcl_ac = AtomConfig(filename=args.supcl)
-    nwarns,  max_dist = check_atompos_consistency(bulk_ac, supcl_ac, tol=args.tol)
+    nwarns,  max_dist = check_atompos_consistency(bulk_ac, supcl_ac, 
+                                                  tol=args.tol)
     if nwarns == 0:
-        print(f"No atom position inconsistency found (max_dist={max_dist} angstrom).")
+        print(f"No atom position inconsistency found.")
     else:
-        print(f"{nwarns} atom position inconsistency found (max_dist={max_dist} angstrom).")
+        print(
+            f"{nwarns} atom position inconsistency found "
+            f"(max_dist={max_dist} angstrom).")
 
 
 if __name__ == "__main__":

@@ -587,13 +587,13 @@ class MaterialSystemInfo():
             if not self.lattice == lattice: 
                 s1 = " -> ".join(str(i) for i in self.lattice.fromwhere)
                 s2 = " -> ".join(str(i) for i in lattice.fromwhere)
-                print(f"""
-lattice vector conflict with existing AL
-old AL (angstrom): 
-{s1}
-{self.lattice.in_unit("angstrom")}
-new AL (angstrom):
-{s2}
-{lattice.in_unit("angstrom")}
-"""
+                print(
+                    "lattice vector conflict with existing AL",
+                    "old AL (angstrom): ",
+                    f"{s1}",
+                    f"{self.lattice.in_unit('angstrom')}",
+                    "new AL (angstrom):",
+                    f"{s2}",
+                    f"{lattice.in_unit('angstrom')}",
+                    sep="\n"
                 )

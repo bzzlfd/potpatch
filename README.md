@@ -18,9 +18,8 @@ pip3 install git+https://github.com/bzzlfd/potpatch.git@im_pos
 ```
 
 ### Download and install (the network is accessible except for GitHub)
+download the `potpatch` project to your local machine, and execute the following command:
 ```bash
-# download and enter the `potpatch` project directory, 
-# so that `pip` will find `potpatch` project file `pyproject.toml` at current directory `.`
 pip3 install <local potpatch project path>
 
 # try it out 
