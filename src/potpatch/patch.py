@@ -86,7 +86,8 @@ def inspect_ingredient(supclInfo: MaterialSystemInfo,
         print(f"{frozen_confirm = } is specified ... ", end="")
         nwarn, _ = check_atompos_consistency(bulkInfo.atomconfig, 
                                              supclInfo.atomconfig, 
-                                             frozen_range=frozen_confirm)
+                                             frozen_range=frozen_confirm, 
+                                             supcl_size=supcl_size)
         if nwarn == 0:
             print("no error")
         elif nwarn > 0:

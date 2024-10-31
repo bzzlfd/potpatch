@@ -4,6 +4,21 @@ from potpatch.objects import AtomConfig, Lattice
 from potpatch.datatype import REAL_8, INTEGER
 
 
+def which_lattice_is_bulk(lat1: Lattice, lat2: Lattice):
+    AL_1 = lat1.in_unit("angstrom")
+    AL_2 = lat2.in_unit("angstrom")
+    
+    magM = AL_2 @ np.linalg.inv(AL_1)        
+    if all(magM[i, i] >= 1 for i in range(3)): 
+        whichLatticeIsBulk = 1 
+    elif all(magM[i, i] <= 1 for i in range(3)):
+        whichLatticeIsBulk = 2
+    else:
+        assert False, "can't infer which lattice is bulk"
+
+    return whichLatticeIsBulk
+
+
 def infer_supercell_size(bulk: Lattice, supcl: Lattice):
     "infer the size of supercell from bulk and supercell *lattices* only"
     AL_b = bulk.in_unit("angstrom")

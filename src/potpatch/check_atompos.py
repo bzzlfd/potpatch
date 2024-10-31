@@ -12,13 +12,18 @@ from potpatch.utils import timing
 @timing()
 def check_atompos_consistency(bulk: AtomConfig, supcl: AtomConfig, 
                               tol: float = 1e-6, 
-                              frozen_range: float = np.inf  # in angstrom, close to edge
+                              frozen_range: float = np.inf,  # in angstrom, close to edge
+                              supcl_size: tuple = None,  
                               ):
     """
     TODO: distinguish between different atom types (as an option) 
     """
-    supcl_size = infer_supercell_size(bulk.lattice, supcl.lattice)
-    print(f"Supercell size: {supcl_size} (guess)")
+    _ss = infer_supercell_size(bulk.lattice, supcl.lattice)
+    if supcl_size is None:
+        supcl_size = _ss
+        print(f"Supercell size: {supcl_size} (guess)")
+    else:
+        assert all(_ss[i] == supcl_size[i] for i in range(3))
 
     supcl_1 = make_supercell(bulk, supcl_size)
     AL = supcl.lattice.in_unit("angstrom")

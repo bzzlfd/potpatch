@@ -106,14 +106,14 @@ def cli_arg_parse():
          "atompos", 
          help="check if the two atom positions are consistent with the "
               "supercell size and frozen range")
+    # TODO pass `bulk` and `supcl` as positional arguments
+    #      check -T position 
     parser_check_atompos.add_argument(
-         "-B", "--bulk", 
-         help='specify the bulk file name. ',
-         required=True)
+         "ac_1",
+         help='specify the first atom.config file. ')
     parser_check_atompos.add_argument(
-         "-S", "--supcl", 
-         help='specify the supercell file name. ',
-         required=True)
+         "ac_2",
+         help='specify the second atom.config file. ')
     parser_check_atompos.add_argument(
          "-T", "--tolerance",
          help="specify the tolerance for checking the consistency of "
@@ -160,10 +160,10 @@ def cli_arg_parse():
     elif args.func == "check":
         if args.check_func == "atompos":
             PROG = "check_atompos"
-            bulk  = args.bulk
-            supcl = args.supcl
-            tolerance = args.tolerance
-            ret_nt = NameTuple(bulk=bulk, supcl=supcl, tol=tolerance)
+            ac_1 = args.ac_1
+            ac_2 = args.ac_2
+            tol  = args.tolerance
+            ret_nt = NameTuple(ac_1=ac_1, ac_2=ac_2, tol=tol)
         else:
             raise ValueError(f'Invalid check sub-command {args.check_func}')
     else:

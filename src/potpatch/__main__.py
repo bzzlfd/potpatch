@@ -15,7 +15,8 @@ from potpatch.correction import gen_charge_correct, edge_match_correct
 from potpatch.patch import (patch, patch_vr, patch_atom, patch_atom_v2,
                             inspect_ingredient)
 
-from potpatch.supercell import make_supercell, modify_supercell
+from potpatch.supercell import (make_supercell, modify_supercell, 
+                                which_lattice_is_bulk)
 from potpatch.shift import shift_oneAtomConfig, shift_twoAtomConfig
 from potpatch.check_atompos import check_atompos_consistency
 from potpatch.parse import cli_arg_parse, file_input_parse
@@ -140,10 +141,15 @@ def shift(args):
 
 
 def check_atompos(args):
-    bulk_ac = AtomConfig(filename=args.bulk)
-    supcl_ac = AtomConfig(filename=args.supcl)
-    nwarns,  max_dist = check_atompos_consistency(bulk_ac, supcl_ac, 
-                                                  tol=args.tol)
+    ac_1 = AtomConfig(filename=args.ac_1)
+    ac_2 = AtomConfig(filename=args.ac_2)
+    whichbulk = which_lattice_is_bulk(ac_1.lattice, ac_2.lattice)
+    if whichbulk == 1:
+        bulk, supcl = ac_1, ac_2
+    elif whichbulk == 2:
+        bulk, supcl = ac_2, ac_1
+    nwarns, max_dist = check_atompos_consistency(bulk, supcl,
+                                                 tol=args.tol)
     if nwarns == 0:
         print(f"No atom position inconsistency found.")
     else:
