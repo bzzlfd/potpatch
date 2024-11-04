@@ -1,4 +1,4 @@
-from textwrap import indent
+from itertools import product
 
 import numpy as np
 from numpy import prod, abs
@@ -154,19 +154,55 @@ def gen_charge_correct(supclInfo: MaterialSystemInfo):
 # TODO 如果奇数超胞, 奇数扩胞, 会出现什么问题吗
 # TODO 如果是奇数网格怎么办
 def edge_match_correct(supclInfo: MaterialSystemInfo, bulkInfo: MaterialSystemInfo):
-    supclmesh = supclInfo.vr.mesh
-    bulkmesh = bulkInfo.vr.mesh
-    n1, n2, n3 = supclmesh.shape
+    supclmesh     = supclInfo.vr.mesh
+    bulkmesh      = bulkInfo.vr.mesh
+
+    diff, num, num_left = edge_diff(supclmesh, bulkmesh, (0, 1, 2))
+    edge_shift, sigma = mean_std(diff)
+
+    print(f"edge shift (V_align): {edge_shift*HA*1000:6.2f} meV, "
+          f"{num-num_left}/{num} data detached")
+    print(f"standard deviation of diffs at the boundary: "
+          f"{sigma*HA*1000:6.2f} meV")
+
+    if (verbose := True):
+        diff_yz, m1, ml1 = edge_diff(supclmesh, bulkmesh, (0,))
+        diff_xz, m2, ml2 = edge_diff(supclmesh, bulkmesh, (1,))
+        diff_xy, m3, ml3 = edge_diff(supclmesh, bulkmesh, (2,))
+        mean_yz, std_yz = mean_std(diff_yz)
+        mean_xz, std_xz = mean_std(diff_xz)
+        mean_xy, std_xy = mean_std(diff_xy)
+        print(f"    mean_yz: {mean_yz*HA*1000:6.2f} meV, "
+              f"std_yz: {std_yz*HA*1000:6.2f} meV, "
+              f"({m1-ml1}/{m1}) data detached")
+        print(f"    mean_xz: {mean_xz*HA*1000:6.2f} meV, "
+              f"std_xz: {std_xz*HA*1000:6.2f} meV, "
+              f"({m2-ml2}/{m2}) data detached")
+        print(f"    mean_xy: {mean_xy*HA*1000:6.2f} meV, "
+              f"std_xy: {std_xy*HA*1000:6.2f} meV, "
+              f"({m3-ml3}/{m3}) data detached")
+
+    supclInfo.vr.mesh -= edge_shift
+
+
+@timing()
+def edge_diff(supclmesh, bulkmesh, axes: tuple):
+    """
+    if 0 in `axes`, then include the yz plane in `diff`
+    """
+    n1,  n2,  n3  = supclmesh.shape
     n1b, n2b, n3b = bulkmesh.shape
-    num = n1*n2+n2*n3+n3*n1-(n1+n2+n3)+1
-    diff = np.ndarray(num, dtype=REAL_8)
-    n = 0
-    for i in range(n1):
-        for j in range(n2):
-            for k in range(n3):
-                if i == n1//2 or j == n2//2 or k == n3//2 :
-                    diff[n] = supclmesh[i, j, k] - bulkmesh[i % n1b, j % n2b, k % n3b]
-                    n += 1
+    n123 = (n1, n2, n3)
+
+    num = n1*n2 + n1*n3 + n2*n3
+
+    n, diff = 0, np.ndarray(num, dtype=REAL_8)
+    for i, j, k in product(range(n1), range(n2), range(n3)):
+        if any([n123[ax] // 2 == (i, j, k)[ax] for ax in axes]):
+            diff[n] = supclmesh[i, j, k] - bulkmesh[i % n1b, j % n2b, k % n3b]
+            n += 1
+    diff = diff[:n]
+
     while True:
         sigma = np.std(diff)
         diffmean = np.mean(diff)
@@ -174,7 +210,11 @@ def edge_match_correct(supclInfo: MaterialSystemInfo, bulkInfo: MaterialSystemIn
         if diff.size <= 0 or np.all(mask): 
             break
         diff = diff[mask]
-    edge_shift, sigma = np.mean(diff), np.std(diff)
-    print(f"edge shift (V_align): {edge_shift*HA*1000} meV, {num-len(diff)}/{num} data detached")
-    print(f"standard deviation of diffs at the boundary: {sigma*HA*1000} meV")
-    supclInfo.vr.mesh -= edge_shift
+    num_left = len(diff)
+
+    return diff, num, num_left
+
+
+def mean_std(diff):
+    diff = np.array(diff)
+    return np.mean(diff), np.std(diff)
