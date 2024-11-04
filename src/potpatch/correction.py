@@ -69,6 +69,9 @@ def gen_charge_correct(supclInfo: MaterialSystemInfo):
                     mesh_rho[i, j, k] = charge_density(charge, r, Rmin)
     _make_mesh_rho(mesh_rho)
     
+    if (debug := False):
+        VR(lattice=supclInfo.lattice, mesh=mesh_rho).write_vr("model_charge")
+    
     def minus_V_periodic(supclInfo: MaterialSystemInfo):
         """
         input supercell MSInfo
