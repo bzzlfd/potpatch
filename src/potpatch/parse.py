@@ -200,10 +200,22 @@ def file_input_parse(PROG, args):
             atomconfig = sub_settings["output"].get("atomconfig", None), 
             vr         = sub_settings["output"].get("vr", None))
         
+        if "check" in sub_settings:
+            check_settings = sub_settings["check"]
+            if "diff_vatom" in sub_settings["check"]:
+                diff_vatom = NameTuple(
+                    output = check_settings.get("output", None),
+                    sigma  = check_settings.get("sigma", None))  # angstrom
+            else:
+                diff_vatom = None
+        check = NameTuple(
+            diff_vatom = diff_vatom,)
+        
         ret_nt = NameTuple(inputfile_dir  = inputfile_dir, 
                            bulk           = bulk, 
                            supcl          = supcl, 
                            output         = output, 
+                           check          = check, 
                            onlyinspect    = onlyinspect, 
                            )
     
