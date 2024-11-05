@@ -19,6 +19,7 @@ from potpatch.supercell import (make_supercell, modify_supercell,
                                 which_lattice_is_bulk)
 from potpatch.shift import shift_oneAtomConfig, shift_twoAtomConfig
 from potpatch.check_atompos import check_atompos_consistency
+from potpatch.diff_vatom import diff_vatom, write_diffvatom
 from potpatch.parse import cli_arg_parse, file_input_parse
 
 
@@ -99,9 +100,8 @@ def potpatch(args):
         sigma  = float(sigma) / BOHR
 
         plus_V_single(supclInfo)
-        dv = diff_vatom(bulkInfo, supclInfo, sigma=sigma)
-        write_diffvatom(output, supclInfo, dv)
-
+        r, dv, ac_bulk, ac_supcl = diff_vatom(bulkInfo, supclInfo, sigma=sigma)
+        write_diffvatom(output, ac_bulk, ac_supcl, r, dv)
 
 
 def mksupcl(args):
