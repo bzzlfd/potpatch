@@ -33,14 +33,14 @@ def diff_vatom(bulk: MaterialSystemInfo, supcl: MaterialSystemInfo,
 
     r = np.zeros(ac_supcl.natoms, dtype=np.float64)
     AL = lattice.in_unit("atomic unit")
-    ac_bulk.revise_atomsposition()
-    ac_bulk.positions[ac_bulk.positions >= 0.5] -= 1.0
-    for i in range(ac_bulk.natoms):
+    ac_supcl.revise_atomsposition()
+    ac_supcl.positions[ac_supcl.positions >= 0.5] -= 1.0
+    for i in range(ac_supcl.natoms):
         shifts = [np.array(shf) for shf in product(range(-1, 1), repeat=3)]
-        coords = (ac_bulk.positions[i, :] + shifts) @ AL
+        coords = (ac_supcl.positions[i, :] + shifts) @ AL
         r[i] = np.min(np.linalg.norm(coords, axis=1))
 
-    closest_resort(AL, ac_supcl, ac_bulk)
+    ac_bulk = closest_resort(AL, ac_supcl, ac_bulk)
 
     iAL = (np.linalg.inv(AL))
     iuAL = (iAL / np.linalg.norm(iAL, axis=0)).T
@@ -102,6 +102,8 @@ def closest_resort(AL, supcl: AtomConfig, bulk: AtomConfig):
     bulk.positions[bulk.positions >= 0.5] -= 1.0
     bulk.positions = bulk.positions[order]
     bulk.itypes = bulk.itypes[order]
+
+    return bulk
 
 
 def gaussian_integrate(AL, mesh: np.ndarray, window_lb, window_ur, pos, sigma):
