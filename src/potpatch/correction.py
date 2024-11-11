@@ -202,6 +202,7 @@ def edge_diff(supclmesh, bulkmesh, axes: tuple):
             diff[n] = supclmesh[i, j, k] - bulkmesh[i % n1b, j % n2b, k % n3b]
             n += 1
     diff = diff[:n]
+    num = len(diff)
 
     while True:
         sigma = np.std(diff)

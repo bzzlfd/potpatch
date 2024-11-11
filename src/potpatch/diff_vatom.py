@@ -107,7 +107,7 @@ def closest_resort(AL, supcl: AtomConfig, bulk: AtomConfig):
 
 
 def gaussian_integrate(AL, mesh: np.ndarray, window_lb, window_ur, pos, sigma):
-    Ω = np.abs(np.dot(AL[0], np.cross(AL[1], AL[2])))
+    Ω = np.abs(np.linalg.det(AL))
     n123 = np.array(mesh.shape)
     dΩ = Ω / np.prod(n123)
     
@@ -122,8 +122,10 @@ def gaussian_integrate(AL, mesh: np.ndarray, window_lb, window_ur, pos, sigma):
     
     gaussian_vals = np.exp(-r2 / (2 * sigma ** 2))
     
-    vr_sum = np.sum(mesh[flat_indices[:, 0], flat_indices[:, 1], 
-                         flat_indices[:, 2]] * gaussian_vals)  #
+    vr_sum = np.sum(mesh[flat_indices[:, 0], 
+                         flat_indices[:, 1], 
+                         flat_indices[:, 2]] 
+                    * gaussian_vals)  #
     gaussian_sum = np.sum(gaussian_vals)
     
     vr_avg = vr_sum / gaussian_sum
