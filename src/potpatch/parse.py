@@ -205,8 +205,8 @@ def file_input_parse(PROG, args):
             check_settings = sub_settings["check"]
             if "diff_vatom" in sub_settings["check"]:
                 diff_vatom = NameTuple(
-                    output = check_settings.get("output", None),
-                    sigma  = check_settings.get("sigma", None))  # angstrom
+                    output = check_settings["diff_vatom"].get("output", None),
+                    sigma  = check_settings["diff_vatom"].get("sigma", None))  # angstrom
         check = NameTuple(
             diff_vatom = diff_vatom,)
         
