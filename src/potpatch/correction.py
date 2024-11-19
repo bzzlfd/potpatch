@@ -1,8 +1,10 @@
 from itertools import product
 
 import numpy as np
-from numpy import prod, abs
-from numba import jit, guvectorize
+from numpy import pi
+from numpy import prod, abs, sqrt
+from numpy.linalg import norm, inv, det, eigvalsh
+from numba import jit, guvectorize, prange
 
 from potpatch.utils import simpson, timing
 from potpatch.constant import HA, EPSILON0, BOHR
@@ -32,26 +34,30 @@ def gen_charge_correct(supclInfo: MaterialSystemInfo):
     n123    = supclInfo.vr.n123
     charge  = supclInfo.charge
     charge_pos = supclInfo.charge_pos if supclInfo.charge_pos is not None else np.zeros(3)
+    epsilon = supclInfo.epsilon
+
     for i in range(3):
         pos_i = charge_pos[i] % 1
         charge_pos[i] = pos_i if pos_i <= 0.5 else pos_i-1  # n=6  //2->  -3...2  +1->  -2...0 ∪ 1...3( `=` matter)
-    epsilon = supclInfo.epsilon
+    for i, j in product(range(3), range(3)):
+        assert epsilon[i,j] == epsilon[j,i]
+    eps_ii = eigvalsh(epsilon)
+    inv_eps = inv(epsilon)
 
-    vol = abs(np.linalg.det(AL))
-    rlattice = (2 * np.pi * np.linalg.inv(AL)).T
-    heights = [np.dot(rlattice[i]/np.linalg.norm(rlattice[i]), AL[i]) for i in range(0, 3)]
-    Rmin = np.min( 
-        [np.array([abs(0.5-charge_pos[i]), abs(-0.5-charge_pos[i])]) * h for (i, h) in enumerate(heights)]
-    )
+    vol = abs(det(AL))
+    rlattice = (2 * pi * inv(AL)).T
+
+    R = chargemodel_R(AL, epsilon, charge_pos)
+    _n = (4/3*np.pi * R**3) / (vol / prod(n123)) * sqrt(prod(eps_ii))
+    _n = int(round(_n))
     print(
-        f"""
-        gen_charge_correct: charge_model.R = {Rmin*BOHR} angstrom
-        about {int( ( 4/3*np.pi * Rmin**3 ) / ( vol / prod(n123) ) )}/{prod(n123)} grid points in it. 
-        """
+        f"gen_charge_correct: charge_model.R = "
+        f"{R*BOHR*max(sqrt(eps_ii)):.3f} angstrom\n"
+        f"    about {_n}/{prod(n123)} grid points in it. "
     )
 
     # minus_V_periodic
-    little_cube = np.array([AL[i]/n123[i] for i in range(3)])
+    delta_AL = np.array([AL[i]/n123[i] for i in range(3)])
     mesh_rho = np.ndarray(n123, dtype=REAL_8)
 
     @timing()
@@ -59,14 +65,23 @@ def gen_charge_correct(supclInfo: MaterialSystemInfo):
     def _make_mesh_rho(mesh_rho):
         # `AL`, `charge_pos` are in supclInfo
         n1, n2, n3 = mesh_rho.shape
-        for i in range(-n1//2+1, n1//2+1):
-            for j in range(-n2//2+1, n2//2+1):
-                for k in range(-n3//2+1, n3//2+1):
-                    r = little_cube[0]*i - AL[0]*charge_pos[0] + \
-                        little_cube[1]*j - AL[1]*charge_pos[1] + \
-                        little_cube[2]*k - AL[2]*charge_pos[2]
-                    r = np.sqrt(r[0]**2 + r[1]**2 + r[2]**2)
-                    mesh_rho[i, j, k] = charge_density(charge, r, Rmin)
+        for i in prange(-n1//2+1, n1//2+1):
+            for j in prange(-n2//2+1, n2//2+1):
+                for k in prange(-n3//2+1, n3//2+1):
+                    r = delta_AL[0] * i - AL[0] * charge_pos[0] + \
+                        delta_AL[1] * j - AL[1] * charge_pos[1] + \
+                        delta_AL[2] * k - AL[2] * charge_pos[2]
+                    r = r[0] * inv_eps[0, 0] * r[0] + \
+                        r[0] * inv_eps[0, 1] * r[1] + \
+                        r[0] * inv_eps[0, 2] * r[2] + \
+                        r[1] * inv_eps[1, 0] * r[0] + \
+                        r[1] * inv_eps[1, 1] * r[1] + \
+                        r[1] * inv_eps[1, 2] * r[2] + \
+                        r[2] * inv_eps[2, 0] * r[0] + \
+                        r[2] * inv_eps[2, 1] * r[1] + \
+                        r[2] * inv_eps[2, 2] * r[2]
+                    r = np.sqrt(r)
+                    mesh_rho[i, j, k] = charge_density(charge, r, R)
     _make_mesh_rho(mesh_rho)
     
     if (debug := False):
@@ -85,15 +100,21 @@ def gen_charge_correct(supclInfo: MaterialSystemInfo):
             n1, n2, n3 = fourier_coeff.shape
             # n=5  //2->  -3...1  +1->  -2...2 (matter)
             # n=6  //2->  -3...2  +1->  -2...0 ∪ 1...3
-            for i in range(-n1//2+1, n1//2+1):
-                for j in range(-n2//2+1, n2//2+1):
-                    for k in range(-n3//2+1, n3//2+1):
+            for i in prange(-n1//2+1, n1//2+1):
+                for j in prange(-n2//2+1, n2//2+1):
+                    for k in prange(-n3//2+1, n3//2+1):
                         G = rlattice[0]*i + rlattice[1]*j + rlattice[2]*k
-                        G2 = G[0]*G[0] + G[1]*G[1] + G[2]*G[2]
-                        if G2 == 0:
+                        eG = epsilon[0] * G[0] + \
+                            epsilon[1] * G[1] + \
+                            epsilon[2] * G[2]
+                        GeG = G[0]*eG[0] + G[1]*eG[1] + G[2]*eG[2]
+                        if GeG == 0:
                             fourier_coeff[0, 0, 0] = 0
                         else:
-                            fourier_coeff[i, j, k] = -1 * -fourier_coeff[i, j, k] / G2 / (EPSILON0*epsilon)
+                            fourier_coeff[i, j, k] = (
+                                -1                         # ∇⋅ε∇V(r)=-ρ(r）
+                                * -fourier_coeff[i, j, k]  # exp(iG⋅r)
+                                / GeG / (EPSILON0)) / sqrt(prod(eps_ii))
         _rho2V_fourier_coeff(fourier_coeff)
 
         mesh_V = np.fft.ifftn(fourier_coeff, axes=(0,1,2))
@@ -103,23 +124,7 @@ def gen_charge_correct(supclInfo: MaterialSystemInfo):
         supclInfo.vr.mesh -= mesh_V
 
     # plus_V_single
-    R_cutoff = Rmin  # TODO R_cutoff 为了那些有尾巴的函数准备; Rmin 切于 unit cell 的球半径, 作为一个参考
-    # # n = 1000 # TODO 把这个变成一个可控参数
-    # # # charge solid sphere
-    # # charge_shll = np.ndarray(4*n+1)
-    # # for i in range(len(charge_shll)):
-    # #     r = i*R_cutoff/(4*n)
-    # #     charge_shll[i] = charge_density(charge, r, Rmin) * 4 * np.pi * r**2
-    # # charge_sph = np.cumsum(simpson(R_cutoff/(4*n), charge_shll)) 
-    # # # electric field intensity
-    # # r = np.linspace(0,R_cutoff,num=len(charge_sph))
-    # # ele_fld = np.ndarray(len(charge_sph))
-    # # ele_fld[0] = 0
-    # # ele_fld[1:] = charge_sph[1:] / np.square(r[1:]) / epsilon # in a.u., 1/4πε_0==1
-    # # # potential
-    # # V_sph = np.cumsum(simpson(R_cutoff/(2*n), ele_fld[::-1]))
-    # # V_sph = V_sph[::-1] 
-    # # V_sph = V_sph + 1/R_cutoff * charge / epsilon
+    R_cutoff = R 
 
     def plus_V_single(suuuupclInfo: MaterialSystemInfo):
         """
@@ -131,24 +136,73 @@ def gen_charge_correct(supclInfo: MaterialSystemInfo):
         def _plus_V_single(suuuupcl_mesh):
             # `AL`, `charge_pos` are in supclInfo
             n1, n2, n3 = suuuupcl_mesh.shape
-            for i in range(-n1//2+1, n1//2+1):
-                for j in range(-n2//2+1, n2//2+1):
-                    for k in range(-n3//2+1, n3//2+1):
-                        r = little_cube[0]*i - AL[0]*charge_pos[0] + \
-                            little_cube[1]*j - AL[1]*charge_pos[1] + \
-                            little_cube[2]*k - AL[2]*charge_pos[2]
-                        r = np.sqrt(r[0]**2 + r[1]**2 + r[2]**2)
+            for i in prange(-n1//2+1, n1//2+1):
+                for j in prange(-n2//2+1, n2//2+1):
+                    for k in prange(-n3//2+1, n3//2+1):
+                        r = delta_AL[0] * i - AL[0] * charge_pos[0] + \
+                            delta_AL[1] * j - AL[1] * charge_pos[1] + \
+                            delta_AL[2] * k - AL[2] * charge_pos[2]
+                        r = r[0] * inv_eps[0, 0] * r[0] + \
+                            r[0] * inv_eps[0, 1] * r[1] + \
+                            r[0] * inv_eps[0, 2] * r[2] + \
+                            r[1] * inv_eps[1, 0] * r[0] + \
+                            r[1] * inv_eps[1, 1] * r[1] + \
+                            r[1] * inv_eps[1, 2] * r[2] + \
+                            r[2] * inv_eps[2, 0] * r[0] + \
+                            r[2] * inv_eps[2, 1] * r[1] + \
+                            r[2] * inv_eps[2, 2] * r[2]
+                        r = np.sqrt(r)
                         if r > R_cutoff:
-                            suuuupcl_mesh[i, j, k] += 1/r * charge / epsilon
+                            suuuupcl_mesh[i, j, k] += 1/r \
+                                * charge / sqrt(prod(eps_ii))
                         else:
                             # # dr = R_cutoff / n
                             # # i = int(r/dr)
                             # # (V_sph[i]*(r-i*dr)+V_sph[i+1]*((i+1)*dr-r)) / dr
-                            suuuupcl_mesh[i,j,k] += \
-                                (np.sinc(r/R_cutoff)/R_cutoff + 1/R_cutoff) * charge / epsilon
+                            suuuupcl_mesh[i, j, k] += \
+                                (np.sinc(r/R_cutoff)/R_cutoff + 1/R_cutoff) \
+                                * charge / sqrt(prod(eps_ii))
         _plus_V_single(suuuupclInfo.vr.mesh)
 
     return minus_V_periodic, plus_V_single
+
+
+def gen_charge_correct_gaussian(supclInfo: MaterialSystemInfo):
+    raise NotImplementedError()
+
+    def minus_V_periodic(supclInfo: MaterialSystemInfo):
+        def _make_V_inG(epsilon):
+            pass
+
+        pass
+
+    def plus_V_single(suuuupclInfo: MaterialSystemInfo):
+        """
+        ε₀ * ∇⋅ε∇ V(ξ) = - n(ξ), where
+            V(ξ) = 1/√(ε₁ε₂ε₃) 1/ξ erf[√p ξ] 
+            n(ξ) = 1/√(ε₁ε₂ε₃) √(p/π)³ exp(-p ξ²) 
+            ξ    = √(r₁²/ε₁ + r₂²/ε₂ + r₃²/ε₃)
+        """
+        pass
+
+    return minus_V_periodic, plus_V_single
+
+
+def chargemodel_R(AL, epsilon, charge_pos=np.zeros(3)):
+    rlattice = (2 * pi * inv(AL)).T
+    perp_nvecs = [rlattice[i]/norm(rlattice[i]) for i in range(3)]
+    heights = [perp_nvecs[i].T @ AL[i] for i in range(3)]
+    charge_pos = (np.array(charge_pos) + 0.5) % 1
+    inv_eps = inv(epsilon)
+
+    R = np.zeros(3)
+    for i in range(3):
+        p, L = perp_nvecs[i], heights[i]
+        alpha = min(abs(0-charge_pos[i]), abs(1-charge_pos[i]))
+        cos_theta = (p.T @ epsilon @ p) / (norm(p) * norm(epsilon @ p))
+        R[i] = alpha * L / cos_theta * sqrt(p.T @ inv_eps @ p)
+
+    return min(R)
 
 
 # TODO 如果奇数超胞, 奇数扩胞, 会出现什么问题吗

@@ -5,7 +5,7 @@ from textwrap import indent, dedent
 from time import perf_counter
 
 import numpy as np
-from numpy import prod, array, zeros
+from numpy import prod, array, diag, zeros
 
 from potpatch.constant import BOHR, HA, EPSILON0
 from potpatch.objects import (Lattice, 
@@ -41,8 +41,13 @@ def main():
 def potpatch(args):
     target_size        = args.output.size
     charge             = args.supcl.charge
-    charge_pos         = np.array(args.supcl.charge_pos) if args.supcl.charge_pos is not None else np.array([0.,0.,0.])
+    charge_pos         = np.array(args.supcl.charge_pos) if args.supcl.charge_pos is not None else np.array([0., 0., 0.])
     epsilon            = args.supcl.epsilon
+    if isinstance(epsilon, list):
+        epsilon = array(epsilon)
+    else:
+        epsilon = float(epsilon)
+        epsilon = diag([epsilon, epsilon, epsilon])
 
     supcl_size         = args.supcl.size
     frozen_range       = args.supcl.frozen_range
@@ -78,7 +83,7 @@ def potpatch(args):
             f"    atom.config({supclInfo.atomconfig.filename}):",
             f"    charge: {supclInfo.charge}",
             f"    charge_pos: {supclInfo.charge_pos}",
-            f"    epsilon: {supclInfo.epsilon}",
+            f"epsilon: {indent(supclInfo.epsilon.__str__(), ' '*(4+9))}",
             sep="\n"
         )
         return
