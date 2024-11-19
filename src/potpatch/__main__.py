@@ -100,13 +100,13 @@ def potpatch(args):
     suuuupclInfo.vr.write_vr(filename=output_vr)
 
     if args.check.diff_vatom is not None:
-        output = args.check.diff_vatom.output if args.check.diff_vatom.output is not None else join(args.inputfile_dir, "OUT.diff_vatom")
+        outfile = args.check.diff_vatom.output if args.check.diff_vatom.output is not None else join(args.inputfile_dir, "OUT.diff_vatom")
         sigma  = args.check.diff_vatom.sigma  if args.check.diff_vatom.sigma  is not None else BOHR
         sigma  = float(sigma) / BOHR
 
         plus_V_single(supclInfo)
-        r, dv, ac_bulk, ac_supcl = diff_vatom(bulkInfo, supclInfo, sigma=sigma)
-        write_diffvatom(output, ac_bulk, ac_supcl, r, dv)
+        r, ξ, dv, ac_bulk, ac_supcl = diff_vatom(bulkInfo, supclInfo, sigma)
+        write_diffvatom(outfile, ac_bulk, ac_supcl, epsilon, r, ξ, dv)
 
 
 def mksupcl(args):
