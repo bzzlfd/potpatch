@@ -35,7 +35,7 @@ def infer_supercell_size(bulk: Lattice, supcl: Lattice):
     magM = AL_s @ np.linalg.inv(AL_b)
     
     mag = np.array([round(magM[i, i], 0) for i in range(3)], dtype=INTEGER)
-    mag_f = np.array([mag[i, i] for i in range(3)], dtype=REAL_8)
+    mag_f = np.array([magM[i, i] for i in range(3)], dtype=REAL_8)
     
     for i, j in product(range(3), repeat=2):
         if i != j:

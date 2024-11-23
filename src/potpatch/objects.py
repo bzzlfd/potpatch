@@ -79,20 +79,23 @@ class Lattice():
         # TODO 判断类型是不是 Lattice
         return np.all(np.abs(self.AL_AU-lattice.AL_AU) < 1e-5) 
 
-    def __mul__(self, magnification):
+    def __mul__(self, mag):
         """
+        magification can be not a integer
+
         self * magnification
         magnification example: ``(4,4,4)``
         return a new Lattice
         """
-        for i in list(magnification):
-            assert i == round(i, 0), "the magnification is not (all) integer "
-        assert len(magnification) == 3, f"length of magnification must be 3, but not {len(magnification)}"
+        for i in list(mag):
+            if not i == round(i, 0):
+                print(f"WARNING: the magnification({mag}) is not integer")
+        assert len(mag) == 3, f"length of magnification must be 3, but not {len(mag)}"
         AL = np.zeros((3, 3))
         for i in range(3):
-            AL[i] = self.AL[i] * magnification[i]
+            AL[i] = self.AL[i] * mag[i]
         fromwhere = copy(self.fromwhere)
-        fromwhere.append(f"(    {magnification=})")
+        fromwhere.append(f"(    magnification = {mag})")
         return Lattice(AL, self.unit, fromwhere=fromwhere)
 
     def __rmul__(self, magnification):

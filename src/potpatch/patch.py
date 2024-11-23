@@ -185,7 +185,7 @@ def patch_atom_v2(supclAtom: AtomConfig, bulkAtom: AtomConfig,
     cnt, offset = 0, supclAtom.natoms
 
     def in_imbox(pos, planl, planr):
-        if all(planl <= pos) and all(pos < planr):
+        if all(planl < pos) and all(pos <= planr):
             return True
         else:
             return False
@@ -195,8 +195,8 @@ def patch_atom_v2(supclAtom: AtomConfig, bulkAtom: AtomConfig,
     for i in range(target_size[0]):
         for j in range(target_size[1]):
             for k in range(target_size[2]):
+                ijk = np.array((i, j, k))
                 for ia in range(bulkAtom.natoms):
-                    ijk = np.array((i, j, k))
                     pos = bulkAtom.positions[ia] + ijk
                     pos[pos >= target_size / 2] -= \
                         target_size[pos >= target_size / 2]

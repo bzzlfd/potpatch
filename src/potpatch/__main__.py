@@ -105,8 +105,9 @@ def potpatch(args):
         sigma  = float(sigma) / BOHR
 
         plus_V_single(supclInfo)
-        r, ξ, dv, ac_bulk, ac_supcl = diff_vatom(bulkInfo, supclInfo, sigma)
-        write_diffvatom(outfile, ac_bulk, ac_supcl, epsilon, r, ξ, dv)
+        r, ξ, dv, ac_bulk, ac_supcl, order = \
+            diff_vatom(bulkInfo, supclInfo, sigma)
+        write_diffvatom(outfile, ac_bulk, ac_supcl, order, epsilon, r, ξ, dv)
 
 
 def mksupcl(args):

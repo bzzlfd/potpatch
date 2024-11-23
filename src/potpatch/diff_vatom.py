@@ -45,10 +45,11 @@ def diff_vatom(bulk: MaterialSystemInfo, supcl: MaterialSystemInfo,
     window_lb = - np.array([w1, w2, w3])
     window_ur = np.array([w1, w2, w3])
 
-    order, _, _ = bulk_order_mapto_supcl(ac_supcl, ac_bulk, warn_tol=np.inf)
+    order, _, _ = bulk_order_mapto_supcl(ac_bulk, ac_supcl, warn_tol=np.inf)
     r          = np.zeros(ac_supcl.natoms, dtype=np.float64)
     ξ          = np.zeros(ac_supcl.natoms, dtype=np.float64)
     diff_vatom = np.zeros((ac_supcl.natoms, 3), dtype=np.float64)
+    print(f"order={order}")
     for i in prange(ac_supcl.natoms):
         # bulk
         pos = ac_bulk.positions[order[i]]
@@ -69,7 +70,7 @@ def diff_vatom(bulk: MaterialSystemInfo, supcl: MaterialSystemInfo,
 
     diff_vatom[:, 2] = diff_vatom[:, 1] - diff_vatom[:, 0]
 
-    return r, ξ, diff_vatom, ac_bulk, ac_supcl
+    return r, ξ, diff_vatom, ac_bulk, ac_supcl, order
 
 
 def gaussian_integrate(AL, mesh: np.ndarray, window_lb, window_ur, 
@@ -118,8 +119,8 @@ def gaussian_integrate(AL, mesh: np.ndarray, window_lb, window_ur,
     return r, ξ, vr_avg
 
 
-def write_diffvatom(filename: str, supcl: AtomConfig, bulk: AtomConfig, 
-                    epsilon: np.ndarray, 
+def write_diffvatom(filename: str, bulk: AtomConfig, supcl: AtomConfig, 
+                    order, epsilon: np.ndarray, 
                     r: np.ndarray, ξ: np.ndarray, diff_vatom: np.ndarray):
     """
     natoms
@@ -150,7 +151,8 @@ def write_diffvatom(filename: str, supcl: AtomConfig, bulk: AtomConfig,
                 "supcl.ac.itypes, supcl.ac.positions[0:3], supcl.vatom, "
                 "diff_vatom\n")
         for i in range(supcl.natoms):
+            k = order[i]
             f.write(f"{r[i]:15.8f} {ξ[i]:15.8f} {pointv[i]:15.8f} ")
-            f.write(f"{bulk.itypes[i]:20d} {bulk.positions[i, 0]:15.8f} {bulk.positions[i, 1]:15.8f} {bulk.positions[i, 2]:15.8f} {diff_vatom[i, 0]:15.8f}")
+            f.write(f"{bulk.itypes[k]:20d} {bulk.positions[k, 0]:15.8f} {bulk.positions[k, 1]:15.8f} {bulk.positions[k, 2]:15.8f} {diff_vatom[i, 0]:15.8f}")
             f.write(f"{supcl.itypes[i]:20d} {supcl.positions[i, 0]:15.8f} {supcl.positions[i, 1]:15.8f} {supcl.positions[i, 2]:15.8f} {diff_vatom[i, 1]:15.8f}")
             f.write(f"{diff_vatom[i, 2]:20.8f}\n")

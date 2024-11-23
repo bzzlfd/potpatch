@@ -250,10 +250,10 @@ def edge_diff(supclmesh, bulkmesh, axes: tuple):
     n1b, n2b, n3b = bulkmesh.shape
 
     num = sum(
-        (n2*n3, n1*n3, n1*n2, )(ax) for ax in axes
+        [(n2 * n3, n1 * n3, n1 * n2)[ax] for ax in axes]
         ) * 2
 
-    n, diff = 0, np.ndarray(num, dtype=REAL_8)
+    n, diff = 0, np.zeros(num, dtype=REAL_8)
     if 0 in axes:
         for i in range(-n2//2+1, n2//2+1):
             for j in range(-n3//2+1, n3//2+1):

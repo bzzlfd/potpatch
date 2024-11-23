@@ -79,14 +79,14 @@ def bulk_order_mapto_supcl(bulk: AtomConfig, supcl: AtomConfig,
     pos_bulk_trans_shifted = (bulk.positions[:, None, :] + shifts) @ AL_bulk
     for i, pos_supcl in enumerate(supcl.positions):
         pos_supcl_trans = pos_supcl @ AL_supcl
-        distances = np.linalg.norm(
+        _dists = np.linalg.norm(
             # Float[natoms, 8, 3] .- Float[3]
             pos_bulk_trans_shifted - pos_supcl_trans, axis=2)
         
-        argmin, len_shifts = np.argmin(distances), len(shifts)
+        argmin, len_shifts = np.argmin(_dists), len(shifts)
         i_bulk, j_bulk = argmin // len_shifts,  argmin % len_shifts
-        order[i] = j_bulk
-        distances[i] = np.min(distances)
+        order[i] = i_bulk
+        distances[i] = np.min(_dists)
 
         if distances[i] > warn_tol:
             nearest_pos_bulk = bulk.positions[i_bulk] + shifts[j_bulk]
