@@ -18,7 +18,7 @@ from potpatch.patch import (patch, patch_vr, patch_atom, patch_atom_v2,
 from potpatch.supercell import (make_supercell, modify_supercell, 
                                 which_lattice_is_bulk)
 from potpatch.shift import shift_oneAtomConfig, shift_twoAtomConfig
-from potpatch.check_atompos import check_atompos_consistency
+from potpatch.atompos_coin import check_atompos_consistency
 from potpatch.diff_vatom import diff_vatom, write_diffvatom
 from potpatch.parse import cli_arg_parse, file_input_parse
 

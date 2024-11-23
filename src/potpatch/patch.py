@@ -6,7 +6,7 @@ from numba import jit, guvectorize
 
 from potpatch.objects import Lattice, VR, AtomConfig, MaterialSystemInfo
 from potpatch.supercell import make_supercell, modify_supercell, closed_to_edge
-from potpatch.check_atompos import check_atompos_consistency
+from potpatch.atompos_coin import check_atompos_consistency
 from potpatch.utils import timing
 from potpatch.datatype import REAL_8, INTEGER
 
@@ -167,8 +167,7 @@ def patch_atom_v2(supclAtom: AtomConfig, bulkAtom: AtomConfig,
     supclAtom.revise_atomsposition()
     bulkAtom.revise_atomsposition()
 
-    indx = supclAtom.positions >= 0.5
-    supclAtom.positions[indx] -= 1.0
+    supclAtom.positions[supclAtom.positions >= 0.5] -= 1.0
     # code prototype from AtomConfig.__mul__
     nrepeat         = np.prod(target_size)
     natoms          = bulkAtom.natoms * nrepeat
@@ -228,9 +227,9 @@ def patch_vr(supclVR: VR, bulkVR: VR, supcl_size, target_size) -> VR:
                  '(n1,n2,n3),(m1,m2,m3)')
     def _overwrite_supcl_mesh(supcl_mesh, suuuupcl_mesh):
         n1, n2, n3 = supcl_mesh.shape
-        for i in range(-n1//2, n1//2):
-            for j in range(-n2//2, n2//2):
-                for k in range(-n3//2, n3//2):
+        for i in range(-n1//2+1, n1//2+1):
+            for j in range(-n2//2+1, n2//2+1):
+                for k in range(-n3//2+1, n3//2+1):
                     suuuupcl_mesh[i, j, k] = supcl_mesh[i, j, k]
     _overwrite_supcl_mesh(supclVR.mesh, suuuupclVR.mesh)
     return suuuupclVR

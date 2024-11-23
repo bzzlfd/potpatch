@@ -42,6 +42,7 @@ def gen_charge_correct(supclInfo: MaterialSystemInfo):
     for i, j in product(range(3), range(3)):
         assert epsilon[i,j] == epsilon[j,i]
     eps_ii = eigvalsh(epsilon)
+    assert len(eps_ii) == 3, "epsilon is not a 3x3 matrix"
     inv_eps = inv(epsilon)
 
     vol = abs(det(AL))
@@ -240,23 +241,44 @@ def edge_match_correct(supclInfo: MaterialSystemInfo, bulkInfo: MaterialSystemIn
 
 
 @timing()
+@jit(nopython=True)
 def edge_diff(supclmesh, bulkmesh, axes: tuple):
     """
     if 0 in `axes`, then include the yz plane in `diff`
     """
     n1,  n2,  n3  = supclmesh.shape
     n1b, n2b, n3b = bulkmesh.shape
-    n123 = (n1, n2, n3)
 
-    num = n1*n2 + n1*n3 + n2*n3
+    num = sum(
+        (n2*n3, n1*n3, n1*n2, )(ax) for ax in axes
+        ) * 2
 
     n, diff = 0, np.ndarray(num, dtype=REAL_8)
-    for i, j, k in product(range(n1), range(n2), range(n3)):
-        if any([n123[ax] // 2 == (i, j, k)[ax] for ax in axes]):
-            diff[n] = supclmesh[i, j, k] - bulkmesh[i % n1b, j % n2b, k % n3b]
-            n += 1
-    diff = diff[:n]
-    num = len(diff)
+    if 0 in axes:
+        for i in range(-n2//2+1, n2//2+1):
+            for j in range(-n3//2+1, n3//2+1):
+                diff[n] = supclmesh[n1//2, i, j] - \
+                    bulkmesh[(n1//2) % n1b, i % n2b, j % n3b]
+                diff[n+1] = supclmesh[-(n1//2), i, j] - \
+                    bulkmesh[(-(n1//2)) % n1b, i % n2b, j % n3b]
+                n += 2
+    if 1 in axes:
+        for i in range(-n1//2+1, n1//2+1):
+            for j in range(-n3//2+1, n3//2+1):
+                diff[n] = supclmesh[i, n2//2, j] - \
+                    bulkmesh[i % n1b, (n2//2) % n2b, j % n3b]
+                diff[n+1] = supclmesh[i, -(n2//2), j] - \
+                    bulkmesh[i % n1b, (-(n2//2)) % n2b, j % n3b]
+                n += 2
+    if 2 in axes:
+        for i in range(-n1//2+1, n1//2+1):
+            for j in range(-n2//2+1, n2//2+1):
+                diff[n] = supclmesh[i, j, n3//2] - \
+                    bulkmesh[i % n1b, j % n2b, (n3//2) % n3b]
+                diff[n+1] = supclmesh[i, j, -(n3//2)] - \
+                    bulkmesh[i % n1b, j % n2b, (-(n3//2)) % n3b]
+                n += 2
+    assert n == num
 
     while True:
         sigma = np.std(diff)

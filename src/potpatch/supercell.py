@@ -1,4 +1,8 @@
+from itertools import product
+from warnings import warn
+
 import numpy as np
+import numpy.typing as npt
 
 from potpatch.objects import AtomConfig, Lattice
 from potpatch.datatype import REAL_8, INTEGER
@@ -20,21 +24,26 @@ def which_lattice_is_bulk(lat1: Lattice, lat2: Lattice):
 
 
 def infer_supercell_size(bulk: Lattice, supcl: Lattice):
-    "infer the size of supercell from bulk and supercell *lattices* only"
+    """
+    infer the size of supercell from bulk and supercell *lattices* only
+    returns:
+        mag: integer array, size of supercell
+        mag_f: float array, size of supercell
+    """
     AL_b = bulk.in_unit("angstrom")
     AL_s = supcl.in_unit("angstrom")
     magM = AL_s @ np.linalg.inv(AL_b)
     
-    for i in range(3):
-        for j in range(3):
-            if i != j:
-                assert abs(magM[i, j]) < 1e-6, f"{abs(magM[i, j]) = }"
-            else:
-                assert abs(magM[i, i] - round(magM[i, i], 0)) < 1e-6, \
-                    f"{abs(magM[i, i] - round(magM[i, i], 0)) = }"
+    mag = np.array([round(magM[i, i], 0) for i in range(3)], dtype=INTEGER)
+    mag_f = np.array([mag[i, i] for i in range(3)], dtype=REAL_8)
     
-    mag = np.array([round(magM[i, i], 0) for i in range(3)], dtype=np.int64)
-    return mag
+    for i, j in product(range(3), repeat=2):
+        if i != j:
+            assert abs(magM[i, j]) < 1e-6, \
+                f"AL_s / AL_b = {magM}"
+        if i == j and abs(magM[i, i] - round(magM[i, i])) > 1e-6:
+            warn(f"warning magM[i, i]{mag_f} is not integer", stacklevel=3)
+    return mag, mag_f
 
 
 def make_supercell(bulkAtom: AtomConfig, m123) -> AtomConfig:

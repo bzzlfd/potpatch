@@ -16,7 +16,7 @@ from numpy.linalg import norm, inv, det, eigvalsh
 from numba import jit, guvectorize, prange
 
 from potpatch.objects import Lattice, VR, AtomConfig, MaterialSystemInfo
-from potpatch.supercell import infer_supercell_size
+from potpatch.atompos_coin import bulk_order_mapto_supcl
 from potpatch.datatype import INTEGER
 from potpatch.constant import HA, BOHR
 from potpatch.utils import timing
@@ -25,20 +25,15 @@ from potpatch.utils import timing
 @timing()
 def diff_vatom(bulk: MaterialSystemInfo, supcl: MaterialSystemInfo, 
                sigma: float = 1.):
-    size = infer_supercell_size(bulk.lattice, supcl.lattice)
-    ac_bulk  = bulk.atomconfig * size
+    ac_bulk  = bulk.atomconfig
     ac_supcl = supcl.atomconfig
-    vr_bulk  = bulk.vr * size
+    vr_bulk  = bulk.vr
     vr_supcl = supcl.vr
-    lattice = supcl.lattice
-    AL      = lattice.in_unit("atomic unit")
     epsilon = supcl.epsilon
     n123 = supcl.vr.n123
 
-    # sort bulk positions: may distroy the ac_bulk 
-    ac_bulk = closest_resort(AL, ac_supcl, ac_bulk)
-
     # gaussian integration window
+    AL = supcl.lattice.in_unit("atomic unit")
     iAL = (np.linalg.inv(AL))
     iuAL = (iAL / np.linalg.norm(iAL, axis=0)).T
     L = np.array([np.abs(np.dot(AL[i], iuAL[i])) for i in range(3)])
@@ -50,64 +45,31 @@ def diff_vatom(bulk: MaterialSystemInfo, supcl: MaterialSystemInfo,
     window_lb = - np.array([w1, w2, w3])
     window_ur = np.array([w1, w2, w3])
 
+    order, _, _ = bulk_order_mapto_supcl(ac_supcl, ac_bulk, warn_tol=np.inf)
     r          = np.zeros(ac_supcl.natoms, dtype=np.float64)
     ξ          = np.zeros(ac_supcl.natoms, dtype=np.float64)
     diff_vatom = np.zeros((ac_supcl.natoms, 3), dtype=np.float64)
-    if _revise := True:  # revise block
-        ac_supcl.revise_atomsposition()
-        ac_supcl.positions[ac_supcl.positions >= 0.5] -= 1.0
-        ac_bulk.revise_atomsposition()
-        ac_bulk.positions[ac_bulk.positions >= 0.5] -= 1.0
     for i in prange(ac_supcl.natoms):
         # bulk
-        pos = ac_bulk.positions[i]
+        pos = ac_bulk.positions[order[i]]
         center = INTEGER(np.ceil(pos * n123))
         _, _, diff_vatom[i, 0] = \
-            gaussian_integrate(AL, vr_bulk.mesh, 
+            gaussian_integrate(bulk.lattice.in_unit("atomic unit"),
+                               vr_bulk.mesh, 
                                center+window_lb, center+window_ur, 
                                pos, epsilon, sigma)
         # supercell, r, ξ
         pos = ac_supcl.positions[i]
         center = INTEGER(np.ceil(pos * n123))
         r[i], ξ[i], diff_vatom[i, 1] = \
-            gaussian_integrate(AL, vr_supcl.mesh, 
+            gaussian_integrate(supcl.lattice.in_unit("atomic unit"),
+                               vr_supcl.mesh, 
                                center+window_lb, center+window_ur, 
                                pos, epsilon, sigma)
 
     diff_vatom[:, 2] = diff_vatom[:, 1] - diff_vatom[:, 0]
 
     return r, ξ, diff_vatom, ac_bulk, ac_supcl
-
-
-def closest_resort(AL, supcl: AtomConfig, bulk: AtomConfig):
-    """may not resort
-    operate `bulk`
-    """
-    supcl.revise_atomsposition()
-    supcl.positions[supcl.positions >= 0.5] -= 1.0
-    bulk.revise_atomsposition()
-
-    order = np.zeros(len(supcl.positions), dtype=np.int32)
-    shifts = [np.array(shf) for shf in product(range(-1, 1), repeat=3)]
-    
-    pos2_transformed_shifted = (bulk.positions[:, None, :] + shifts) @ AL 
-    for i, pos1 in enumerate(supcl.positions):
-        pos1_transformed = pos1 @ AL  
-
-        distances = np.linalg.norm(
-            # Float[8, 3] .- Float[3]
-            pos2_transformed_shifted - pos1_transformed, 
-            axis=2)
-        
-        argmin, len_shifts = np.argmin(distances), len(shifts)
-        order[i]           = argmin // len_shifts 
-
-    bulk.revise_atomsposition()
-    bulk.positions[bulk.positions >= 0.5] -= 1.0
-    bulk.positions = bulk.positions[order]
-    bulk.itypes = bulk.itypes[order]
-
-    return bulk
 
 
 def gaussian_integrate(AL, mesh: np.ndarray, window_lb, window_ur, 
@@ -131,7 +93,8 @@ def gaussian_integrate(AL, mesh: np.ndarray, window_lb, window_ur,
                             window_lb[2]:window_ur[2]]  #
 
     flat_indices = mesh_indices.reshape(3, -1).T  # [m, 3]
-    
+    flat_indices = flat_indices % n123 
+
     r = pos @ AL.T
     ξ, r = sqrt(r.T @ inv_eps @ r), norm(r)
     

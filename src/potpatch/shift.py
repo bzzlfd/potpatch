@@ -35,12 +35,12 @@ def shift_twoAtomConfig(bulk_ac: AtomConfig,
     assert np.shape(supcl_shift) == np.zeros(3).shape
 
     # infer the supercell size 
-    mag = infer_supercell_size(bulk_ac.lattice, supcl_ac.lattice)
+    mag, mag_f = infer_supercell_size(bulk_ac.lattice, supcl_ac.lattice)
     print("I infer that the size of supercell is "
-          f"{','.join([str(i) for i in mag])}")
+          f"{','.join([str(i) for i in mag_f])}")
     
     shift_oneAtomConfig(supcl_ac, supcl_shift)
-    shift_oneAtomConfig(bulk_ac, supcl_shift * mag)
+    shift_oneAtomConfig(bulk_ac, supcl_shift * mag_f)
 
 
 def shift_materialsystem(ms: MaterialSystemInfo, shift) -> None:
