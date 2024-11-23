@@ -48,8 +48,8 @@ there are some suggestions:
    1. I'm concerned that this installation method might encounter platform issues, but the advantage of this method is that you don't need to download an entire Anaconda.
    2. The fortunate thing is, these *build dependencies* are compatible with all platforms. 
 5. Additionally, there are some unorthodox methods.
-   1. modify `PYTHONPATH` environment variable or copy this code into a directory where Python knows ([`python -m site`](https://docs.python.org/3/library/site.html) will provide you with some information.).
-   2. These are some hacks for Python import mechanisms. This way, you can use this program through `python -m potpatch`. 
+   1. modify `PYTHONPATH` environment variable or copy this code into a directory where Python knows ([`python3 -m site`](https://docs.python.org/3/library/site.html) will provide you with some information.).
+   2. These are some hacks for Python import mechanisms. This way, you can use this program through `python3 -m potpatch`. 
 
 
 
