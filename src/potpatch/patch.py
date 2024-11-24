@@ -84,14 +84,15 @@ def inspect_ingredient(supclInfo: MaterialSystemInfo,
             print("no error")
     if (frozen_confirm is not None):
         print(f"{frozen_confirm = } is specified ... ", end="")
-        nwarn, _ = check_atompos_consistency(bulkInfo.atomconfig, 
+        nwarn, max_dist = check_atompos_consistency(
+                                             bulkInfo.atomconfig, 
                                              supclInfo.atomconfig, 
                                              frozen_range=frozen_confirm, 
                                              supcl_size=supcl_size)
         if nwarn == 0:
             print("no error")
         elif nwarn > 0:
-            print(f"{nwarn} warnings")
+            print(f"{nwarn} warnings:  max_distance = {max_dist} angstrom")
     return supcl_size
 
 
