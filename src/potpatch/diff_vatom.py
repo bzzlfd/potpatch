@@ -103,10 +103,13 @@ def gaussian_integrate(AL, mesh: np.ndarray, window,
     Ω = abs(det(AL))
     n123 = np.array(mesh.shape)
     dΩ = Ω / prod(n123)
-    
+
     # epsilon
     inv_eps = inv(epsilon)
     eps_ii = eigvalsh(epsilon)
+    # |
+    r = pos @ AL
+    ξ, r = sqrt(r.T @ inv_eps @ r), norm(r)
     # |
     meps_ii = min(eps_ii)
     # |
@@ -120,9 +123,6 @@ def gaussian_integrate(AL, mesh: np.ndarray, window,
                             window_lb[1]:window_ur[1], 
                             window_lb[2]:window_ur[2]]  #
     flat_indices = mesh_indices.reshape(3, -1).T  # [m, 3]
-
-    r = pos @ AL
-    ξ, r = sqrt(r.T @ inv_eps @ r), norm(r)
     
     rT = (flat_indices / n123 - pos) @ AL  # [m, 3]
     ξ2 = einsum("ij,ij->i", rT @ inv_eps, rT)
@@ -155,7 +155,7 @@ def gaussian_integrate(AL, mesh: np.ndarray, window,
 
 
 def write_diffvatom(filename: str, bulk: AtomConfig, supcl: AtomConfig, 
-                    order, epsilon: np.ndarray, 
+                    order, epsilon: np.ndarray, charge, 
                     r: np.ndarray, ξ: np.ndarray, diff_vatom: np.ndarray):
     """
     natoms
@@ -167,7 +167,7 @@ def write_diffvatom(filename: str, bulk: AtomConfig, supcl: AtomConfig,
         pass  # TODO overwrite or rename
 
     ξ[ξ < 1e-10] = 1e-10  # avoid divide by zero
-    pointv      = 1 / ξ / sqrt(prod(eigvalsh(epsilon)))
+    pointv      = charge / ξ / sqrt(prod(eigvalsh(epsilon))) 
 
     r           = r * BOHR
     ξ           = ξ * BOHR
@@ -182,15 +182,17 @@ def write_diffvatom(filename: str, bulk: AtomConfig, supcl: AtomConfig,
         for i in range(3):
             f.write("%15.8f %15.8f %15.8f\n" % (
                 epsilon[i, 0], epsilon[i, 1], epsilon[i, 2]))
-        f.write(" diff_VATOM  # r, ξ, 1/√(ε₁ε₂ε₃)/ξ, "
-                "bulk.ac.itypes, bulk.ac.positions[0:3], bulk.vatom, "
-                "supcl.ac.itypes, supcl.ac.positions[0:3], supcl.vatom, "
-                "diff_vatom\n")
+        f.write(" diff_VATOM  # "
+                "%32s %49s %15s %49s %15s %20s\n" % (
+                    f"r, ξ, {charge}/√(ε₁ε₂ε₃)/ξ",
+                    "bulk.ac.(itypes, positions[0:3])", "bulk.vatom",
+                    "supcl.ac.(itypes, positions[0:3])", "supcl.vatom",
+                    "diff_vatom"))
         for i in range(supcl.natoms):
             k = order[i]                                                                             
             f.write(f"{r[i]:15.8f} {ξ[i]:15.8f} {pointv[i]:15.8f} ")
-            f.write("%20d %15.8f %15.8f %15.8f %15.8f" % (
+            f.write("%10d %12.8f %12.8f %12.8f %15.8f " % (
                 bulk.itypes[k], *bulk.positions[k], diff_vatom[i, 0]))
-            f.write("%20d %15.8f %15.8f %15.8f %15.8f" % (
+            f.write("%10d %12.8f %12.8f %12.8f %15.8f " % (
                 supcl.itypes[i], *supcl.positions[i], diff_vatom[i, 1]))
             f.write(f"{diff_vatom[i, 2]:20.8f}\n")
