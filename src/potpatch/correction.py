@@ -40,7 +40,7 @@ def gen_charge_correct(supclInfo: MaterialSystemInfo):
         pos_i = charge_pos[i] % 1
         charge_pos[i] = pos_i if pos_i <= 0.5 else pos_i-1  # n=6  //2->  -3...2  +1->  -2...0 ∪ 1...3( `=` matter)
     for i, j in product(range(3), range(3)):
-        assert epsilon[i,j] == epsilon[j,i]
+        assert epsilon[i, j] == epsilon[j, i], "epsilon is not symmetric"
     eps_ii = eigvalsh(epsilon)
     assert len(eps_ii) == 3, "epsilon is not a 3x3 matrix"
     inv_eps = inv(epsilon)
@@ -118,7 +118,7 @@ def gen_charge_correct(supclInfo: MaterialSystemInfo):
                                 / GeG / (EPSILON0)) / sqrt(prod(eps_ii))
         _rho2V_fourier_coeff(fourier_coeff)
 
-        mesh_V = np.fft.ifftn(fourier_coeff, axes=(0,1,2))
+        mesh_V = np.fft.ifftn(fourier_coeff, axes=(0, 1, 2))
         mesh_V = np.real(mesh_V)
         assert (sai := np.sum(np.abs(np.imag(mesh_V)))) < 1e-10, \
             f"imag(mesh_V) |> abs |> sum = {sai}, which is not considered a real number mesh"

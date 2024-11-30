@@ -64,8 +64,8 @@ def bulk_order_mapto_supcl(bulk: AtomConfig, supcl: AtomConfig,
     else:
         raise ValueError("... bulk_order_mapto_supcl(): relationship between "
                          "`bulk size` and `supcl size` is neither "
-                         "`all(bulk_size > supcl_size)` OR "
-                         "`all(bulk_size < supcl_size) and `mag` is integer`")
+                         "`all(bulk_size ≥ supcl_size)` OR "
+                         "`all(bulk_size ≤ supcl_size) and `mag` is integer`")
 
     order = np.zeros(supcl.natoms, dtype=np.int64)
     distances = np.zeros(supcl.natoms)
