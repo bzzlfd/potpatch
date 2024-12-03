@@ -1,6 +1,7 @@
 import os
 from copy import deepcopy, copy
 import warnings
+from math import ceil
 
 import numpy as np
 
@@ -226,8 +227,9 @@ class VR():
         nnodes will be converted into `INTEGER` when writing into file
         """
         if nnodes is None:
-            nnodes = self.mesh.size // (128*1024*1024)
-            nnodes = 1 if nnodes == 0 else nnodes
+            nnodes = ceil(self.mesh.size / (128*1024*1024))
+            if nnodes < 1:
+                nnodes = 1
             while self.mesh.size % nnodes != 0 or nnodes % nnodes_base != 0:
                 nnodes += 1
         # {mnodes} processors, {nnodes} vr slices
