@@ -186,7 +186,7 @@ def patch_atom_v2(supclAtom: AtomConfig, bulkAtom: AtomConfig,
     cnt, offset = 0, supclAtom.natoms
 
     def in_imbox(pos, planl, planr):
-        if all(planl < pos) and all(pos <= planr):
+        if all(planl <= pos) and all(pos < planr):
             return True
         else:
             return False
