@@ -220,6 +220,8 @@ class VR():
             for i in range(0, nnodes):
                 self.mesh[i*nr: (i+1)*nr] = read_fortran_binary_block(io, REAL_8)[0:nr]
             self.mesh = np.reshape(self.mesh, (n1, n2, n3))
+        
+        return self
 
     def write_vr(self, filename: str, vr_fmt="PWmat", 
                  nnodes: int | None = None, nnodes_base: int = 1):
@@ -383,6 +385,8 @@ class AtomConfig():
             self.itypes     = itype_list
             self.positions  = position_list
             self.moves      = move_list
+        
+        return self
 
     def write_atoms(self, filename: str, comment: str | None = None, 
                     atoms_fmt: str = "PWmat"):
@@ -474,6 +478,14 @@ class VATOM():
             self.positions  = position_list
             self.vatoms     = vatom_list
 
+        return self
+            
+    def revise_atomsposition(self):
+        """
+        revise fractional atom positions so that they are in the range [0,1)
+        who cares: [√]write_diffvatom
+        """
+        self.positions %= 1
 
 class EIGEN():
     """
@@ -510,6 +522,8 @@ class EIGEN():
                             io, INTEGER, INTEGER, REAL_8, REAL_8, REAL_8, REAL_8)
                     self.eigenvals[iislda, ikpt, :] = \
                         read_fortran_binary_block(io, REAL_8)
+
+        return self
 
 
 class MaterialSystemInfo():
