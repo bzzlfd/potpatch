@@ -453,8 +453,10 @@ class AtomConfig():
 
 
 class VATOM():
-    """OUT.VATOM"""
-    def __init__(self, filename=None, comment: str = "unkown eigen") -> None:
+    """OUT.VATOM
+    The unit of potential is eV .
+    """
+    def __init__(self, filename=None, comment: str = "unkown vatom") -> None:
         if filename is not None:
             self.read_vatom(filename)
 
@@ -476,10 +478,22 @@ class VATOM():
                 vatom_list[i]       = REAL_8(s[4])
             self.itypes     = itype_list
             self.positions  = position_list
-            self.vatoms     = vatom_list
+            self._vatoms     = vatom_list / HA  # convert to a.u.
 
         return self
-            
+    
+    @property
+    def vatoms(self):  # default unit is eV (Consistent with the OUT.VATOM)
+        return self._vatoms * HA 
+
+    @property
+    def vatoms_ev(self): 
+        return self._vatoms * HA 
+
+    @property
+    def vatoms_au(self):
+        return self._vatoms 
+
     def revise_atomsposition(self):
         """
         revise fractional atom positions so that they are in the range [0,1)
