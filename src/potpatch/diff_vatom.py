@@ -15,9 +15,10 @@ from itertools import product
 import numpy as np
 from numpy import sum, einsum, prod, abs, sqrt, exp, pi
 from numpy.linalg import norm, inv, det, eigvalsh
+from numpy.typing import NDArray
 from numba import jit, guvectorize, prange
 
-from potpatch.objects import Lattice, VR, AtomConfig, MaterialSystemInfo
+from potpatch.objects import Lattice, VR, AtomConfig, VATOM, MaterialSystemInfo
 from potpatch.atompos_coin import bulk_order_mapto_supcl
 from potpatch.supercell import infer_supercell_size
 from potpatch.datatype import INTEGER, INTEGER_8
@@ -48,22 +49,21 @@ def diff_vatom(bulk: MaterialSystemInfo, supcl: MaterialSystemInfo,
     order, _, _ = bulk_order_mapto_supcl(ac_bulk, ac_supcl, warn_tol=np.inf)
     r          = np.zeros(ac_supcl.natoms, dtype=np.float64)
     ξ          = np.zeros(ac_supcl.natoms, dtype=np.float64)
-    diff_vatom = np.zeros((ac_supcl.natoms, 3), dtype=np.float64)
+    dv_bulk    = np.zeros(ac_supcl.natoms, dtype=np.float64)
+    dv_supcl   = np.zeros(ac_supcl.natoms, dtype=np.float64)
     for i in prange(ac_supcl.natoms):
         # bulk
         pos = ac_bulk.positions[order[i]]
-        _, _, diff_vatom[i, 0] = \
+        _, _, dv_bulk[i] = \
             gaussian_integrate(bulk.lattice.in_unit("atomic unit"),
                                vr_bulk.mesh, window, pos, epsilon, sigma)
         # supercell, r, ξ
         pos = ac_supcl.positions[i]
-        r[i], ξ[i], diff_vatom[i, 1] = \
+        r[i], ξ[i], dv_supcl[i] = \
             gaussian_integrate(supcl.lattice.in_unit("atomic unit"),
                                vr_supcl.mesh, window, pos, epsilon, sigma)
 
-    diff_vatom[:, 2] = diff_vatom[:, 1] - diff_vatom[:, 0]
-
-    return r, ξ, diff_vatom, ac_bulk, ac_supcl, order
+    return r, ξ, dv_bulk, dv_supcl, ac_bulk, ac_supcl, order
 
 
 def get_window(AL, n123, epsilon, sigma):
@@ -154,9 +154,11 @@ def gaussian_integrate(AL, mesh: np.ndarray, window,
     return r, ξ, vr_avg
 
 
-def write_diffvatom(filename: str, bulk: AtomConfig, supcl: AtomConfig, 
-                    order, epsilon: np.ndarray, charge, 
-                    r: np.ndarray, ξ: np.ndarray, diff_vatom: np.ndarray):
+def write_diffvatom(filename: str, 
+                    bulk: AtomConfig | VATOM, supcl: AtomConfig | VATOM, 
+                    order, epsilon: NDArray, charge, 
+                    r: NDArray, ξ: NDArray, 
+                    dv_bulk: NDArray, dv_supcl0: NDArray, dv_supcl: NDArray):
     """
     natoms
     ...
@@ -167,12 +169,21 @@ def write_diffvatom(filename: str, bulk: AtomConfig, supcl: AtomConfig,
         pass  # TODO overwrite or rename
 
     ξ[ξ < 1e-10] = 1e-10  # avoid divide by zero
-    pointv      = charge / ξ / sqrt(prod(eigvalsh(epsilon))) 
+    try:
+        eps_ii = eigvalsh(epsilon)
+    except np.linalg.LinAlgError:
+        eps_ii = np.nan
+    pointv      = charge / ξ / sqrt(prod(eps_ii)) 
+    pointv[ξ <= 1e-10] = charge * np.inf
 
     r           = r * BOHR
     ξ           = ξ * BOHR
     pointv      = pointv * HA        
-    diff_vatom  = diff_vatom * HA
+    dv_bulk     = dv_bulk * HA
+    dv_supcl0   = dv_supcl0 * HA
+    dv_supcl    = dv_supcl * HA
+    diff_vatom0 = (dv_supcl0 - dv_bulk)
+    diff_vatom  = (dv_supcl - dv_bulk)
 
     supcl.revise_atomsposition()
     bulk.revise_atomsposition()
@@ -183,16 +194,20 @@ def write_diffvatom(filename: str, bulk: AtomConfig, supcl: AtomConfig,
             f.write("%15.8f %15.8f %15.8f\n" % (
                 epsilon[i, 0], epsilon[i, 1], epsilon[i, 2]))
         f.write(" diff_VATOM  # "
-                "%32s %49s %15s %49s %15s %20s\n" % (
+                "%29s %49s %15s %49s %31s %35s\n" % (
                     f"r, ξ, {charge}/√(ε₁ε₂ε₃)/ξ",
-                    "bulk.ac.(itypes, positions[0:3])", "bulk.vatom",
-                    "supcl.ac.(itypes, positions[0:3])", "supcl.vatom",
-                    "diff_vatom"))
+                    "bulk.ac.(itypes, positions[0:3])", 
+                    "bulk.vatom",
+                    "supcl.ac.(itypes, positions[0:3])", 
+                    "supcl.[vatom, vatom_corrected]",
+                    "diff_vatom, diff_vatom_corrected"))
         for i in range(supcl.natoms):
-            k = order[i]                                                                             
-            f.write(f"{r[i]:15.8f} {ξ[i]:15.8f} {pointv[i]:15.8f} ")
+            k = order[i]
+            f.write(f"{r[i]:14.8f} {ξ[i]:14.8f} {pointv[i]:14.8f} ")
             f.write("%10d %12.8f %12.8f %12.8f %15.8f " % (
-                bulk.itypes[k], *bulk.positions[k], diff_vatom[i, 0]))
-            f.write("%10d %12.8f %12.8f %12.8f %15.8f " % (
-                supcl.itypes[i], *supcl.positions[i], diff_vatom[i, 1]))
-            f.write(f"{diff_vatom[i, 2]:20.8f}\n")
+                bulk.itypes[k], *bulk.positions[k], 
+                dv_bulk[i]))
+            f.write("%10d %12.8f %12.8f %12.8f %15.8f %15.8f " % (
+                supcl.itypes[i], *supcl.positions[i], 
+                dv_supcl0[i], dv_supcl[i]))
+            f.write(f"{diff_vatom0[i]:20.8f} {diff_vatom[i]:14.8f}\n")

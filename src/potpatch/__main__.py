@@ -105,10 +105,18 @@ def potpatch(args):
         sigma  = float(sigma) / BOHR
 
         plus_V_single(supclInfo)
-        r, ξ, dv, ac_bulk, ac_supcl, order = \
+        r, ξ, dv_bulk, dv_supcl, ac_bulk, ac_supcl, order = \
             diff_vatom(bulkInfo, supclInfo, sigma)
+        
+        # plus_V_single(supclInfo,    inverse=True)
+        # minus_V_periodic(supclInfo, inverse=True)
+        supclInfo   = MaterialSystemInfo(atoms_filename=supcl_atomconfig, vr_filename=supcl_vr, charge=charge, charge_pos=charge_pos, epsilon=epsilon)
+        _, _, _, dv_supcl_0, _, _, _ = \
+            diff_vatom(bulkInfo, supclInfo, sigma)
+
         write_diffvatom(outfile, ac_bulk, ac_supcl, 
-                        order, epsilon, charge, r, ξ, dv)
+                        order, epsilon, charge, r, ξ,
+                        dv_bulk, dv_supcl_0, dv_supcl)
 
 
 def mksupcl(args):
