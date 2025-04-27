@@ -1,4 +1,4 @@
-from os.path import join, dirname, basename
+from os.path import join, dirname, basename, isabs
 from os import getcwd
 from pathlib import Path
 from textwrap import indent, dedent
@@ -50,24 +50,36 @@ def potpatch(args):
     supcl_size         = args.supcl.size
     frozen_range       = args.supcl.frozen_range
     
-    bulk_atomconfig    = join(args.inputfile_dir, args.bulk.atomconfig )
-    bulk_vr            = join(args.inputfile_dir, args.bulk.vr         )
+    basedir = args.bulk.basedir if isabs(args.bulk.basedir) \
+        else join(args.inputfile_dir, args.bulk.basedir)
+    bulk_atomconfig    = join(basedir, args.bulk.atomconfig)
+    bulk_vr            = join(basedir, args.bulk.vr        )
     bulkInfo    = MaterialSystemInfo(
         atoms_filename=bulk_atomconfig,  vr_filename=bulk_vr, 
         charge=0, epsilon=epsilon)
     # [
-    supcl_atomconfig   = join(args.inputfile_dir, args.supcl.atomconfig)
-    supcl_vr           = join(args.inputfile_dir, args.supcl.vr        )
+    basedir = args.supcl.basedir if isabs(args.supcl.basedir) \
+        else join(args.inputfile_dir, args.supcl.basedir)
+    supcl_atomconfig   = join(basedir, args.supcl.atomconfig)
+    supcl_vr           = join(basedir, args.supcl.vr        )
     supclInfo   = MaterialSystemInfo(
         atoms_filename=supcl_atomconfig, vr_filename=supcl_vr, 
         charge=charge, epsilon=epsilon)
     # [
-    output_atomconfig  = args.output.atomconfig if args.output.atomconfig is not None else f"atom.config_{bulkInfo.atomconfig.natoms*prod(target_size)}"
-    output_vr          = args.output.vr         if args.output.vr         is not None else f"IN.VR_{bulkInfo.atomconfig.natoms*prod(target_size)}"
-    output_atomconfig  = join(args.inputfile_dir, output_atomconfig)
-    output_vr          = join(args.inputfile_dir, output_vr        )
+    output_atomconfig  = args.output.atomconfig \
+        if args.output.atomconfig is not None \
+        else f"atom.config_{bulkInfo.atomconfig.natoms*prod(target_size)}"
+    output_vr          = args.output.vr         \
+        if args.output.vr is not None \
+        else f"IN.VR_{bulkInfo.atomconfig.natoms*prod(target_size)}"
+    basedir = args.output.basedir if isabs(args.output.basedir) \
+        else join(args.inputfile_dir, args.output.basedir)
+    output_atomconfig  = join(basedir, output_atomconfig)
+    output_vr          = join(basedir, output_vr        )
     
-    supcl_size = inspect_ingredient(supclInfo, bulkInfo, size_confirm=supcl_size, frozen_confirm=frozen_range)
+    supcl_size = inspect_ingredient(
+        supclInfo, bulkInfo, 
+        size_confirm=supcl_size, frozen_confirm=frozen_range)
     if args.onlyinspect:
         print(
             r"bulk:",

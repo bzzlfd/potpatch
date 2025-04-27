@@ -184,9 +184,11 @@ def file_input_parse(PROG, args):
         sub_settings = settings["potpatch"]
 
         bulk = NameTuple(
+            basedir    = sub_settings["bulk"]["basedir"], 
             atomconfig = sub_settings["bulk"]["atomconfig"], 
             vr         = sub_settings["bulk"]["vr"])
         supcl = NameTuple(
+            basedir      = sub_settings["supercell"]["basedir"], 
             atomconfig   = sub_settings["supercell"]["atomconfig"], 
             vr           = sub_settings["supercell"]["vr"], 
             # charge_pos   = sub_settings["supercell"].get("charge_pos", None), 
@@ -204,6 +206,7 @@ def file_input_parse(PROG, args):
 
         output = NameTuple(
             size       = sub_settings["output"]["size"], 
+            basedir    = sub_settings["output"]["basedir"], 
             atomconfig = sub_settings["output"].get("atomconfig", None), 
             vr         = sub_settings["output"].get("vr", None))
         
