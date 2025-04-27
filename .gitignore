@@ -7,3 +7,5 @@ doc/_*
 todo*
 *old
 .*
+*egg-info
+build
