@@ -189,12 +189,19 @@ def file_input_parse(PROG, args):
         supcl = NameTuple(
             atomconfig   = sub_settings["supercell"]["atomconfig"], 
             vr           = sub_settings["supercell"]["vr"], 
-            charge       = sub_settings["supercell"]["charge"], 
-            charge_pos   = sub_settings["supercell"].get("charge_pos", None), 
-            epsilon      = sub_settings["supercell"]["epsilon"], 
+            # charge_pos   = sub_settings["supercell"].get("charge_pos", None), 
             size         = sub_settings["supercell"].get("size", None),
             frozen_range = sub_settings["supercell"].get("frozen_range", None))
         
+        correction = NameTuple(
+             epsilon      = sub_settings["correction"]["epsilon"], 
+             charge       = sub_settings["correction"]["charge"], 
+             plus_V       = sub_settings["correction"].get("plus_V", "single"), 
+             # `plus_V` is an option:
+             #      "single": plus_V_single(suuuupleVR) after patching
+             #      "periodic": plus_V_periodic(suuuupleVR) after patching
+        )
+
         output = NameTuple(
             size       = sub_settings["output"]["size"], 
             atomconfig = sub_settings["output"].get("atomconfig", None), 
@@ -213,6 +220,7 @@ def file_input_parse(PROG, args):
         ret_nt = NameTuple(inputfile_dir  = inputfile_dir, 
                            bulk           = bulk, 
                            supcl          = supcl, 
+                           correction     = correction, 
                            output         = output, 
                            check          = check, 
                            onlyinspect    = onlyinspect, 

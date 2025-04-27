@@ -144,6 +144,19 @@ def gen_counter():
     return plusplus
 
 
+def revise_epsilon(epsilon):
+    """
+    input epsilon is float or list[float]
+    output epsilon is Array[float]
+    """
+    if isinstance(epsilon, list):
+        epsilon = np.array(epsilon)
+    else:
+        epsilon = float(epsilon)
+        epsilon = np.diag([epsilon, epsilon, epsilon])
+    return epsilon
+
+
 # =============================================
 # decorators 
 # =============================================

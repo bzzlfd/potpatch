@@ -21,6 +21,7 @@ from potpatch.shift import shift_oneAtomConfig, shift_twoAtomConfig
 from potpatch.atompos_coin import check_atompos_consistency
 from potpatch.diff_vatom import diff_vatom, write_diffvatom
 from potpatch.parse import cli_arg_parse, file_input_parse
+from potpatch.utils import revise_epsilon
 
 
 def main():
@@ -40,24 +41,27 @@ def main():
 
 def potpatch(args):
     target_size        = args.output.size
-    charge             = args.supcl.charge
-    charge_pos         = np.array(args.supcl.charge_pos) if args.supcl.charge_pos is not None else np.array([0., 0., 0.])
-    epsilon            = args.supcl.epsilon
-    if isinstance(epsilon, list):
-        epsilon = array(epsilon)
-    else:
-        epsilon = float(epsilon)
-        epsilon = diag([epsilon, epsilon, epsilon])
+    # [
+    correction = args.correction
+    charge     = correction.charge
+    epsilon    = correction.epsilon
+    epsilon    = revise_epsilon(epsilon)
 
     supcl_size         = args.supcl.size
     frozen_range       = args.supcl.frozen_range
     
     bulk_atomconfig    = join(args.inputfile_dir, args.bulk.atomconfig )
     bulk_vr            = join(args.inputfile_dir, args.bulk.vr         )
-    bulkInfo    = MaterialSystemInfo(atoms_filename=bulk_atomconfig,  vr_filename=bulk_vr)
+    bulkInfo    = MaterialSystemInfo(
+        atoms_filename=bulk_atomconfig,  vr_filename=bulk_vr, 
+        charge=0, epsilon=epsilon)
+    # [
     supcl_atomconfig   = join(args.inputfile_dir, args.supcl.atomconfig)
     supcl_vr           = join(args.inputfile_dir, args.supcl.vr        )
-    supclInfo   = MaterialSystemInfo(atoms_filename=supcl_atomconfig, vr_filename=supcl_vr, charge=charge, charge_pos=charge_pos, epsilon=epsilon)
+    supclInfo   = MaterialSystemInfo(
+        atoms_filename=supcl_atomconfig, vr_filename=supcl_vr, 
+        charge=charge, epsilon=epsilon)
+    # [
     output_atomconfig  = args.output.atomconfig if args.output.atomconfig is not None else f"atom.config_{bulkInfo.atomconfig.natoms*prod(target_size)}"
     output_vr          = args.output.vr         if args.output.vr         is not None else f"IN.VR_{bulkInfo.atomconfig.natoms*prod(target_size)}"
     output_atomconfig  = join(args.inputfile_dir, output_atomconfig)
@@ -88,12 +92,13 @@ def potpatch(args):
         )
         return
     
-    minus_V_periodic, plus_V_single = gen_charge_correct(supclInfo)
+    minus_V_periodic, plus_V_single = gen_charge_correct(supclInfo, correction)
     minus_V_periodic(supclInfo)
     edge_match_correct(supclInfo, bulkInfo)
     if (debg := False):
         supclInfo.vr.write_vr(filename="supcl.VR.debug")
     suuuupclInfo = patch(supclInfo, bulkInfo, supcl_size, target_size)
+    suuuupclInfo.charge, suuuupclInfo.epsilon = charge, epsilon
     plus_V_single(suuuupclInfo)
 
     suuuupclInfo.atomconfig.write_atoms(filename=output_atomconfig)
@@ -110,7 +115,9 @@ def potpatch(args):
         
         # plus_V_single(supclInfo,    inverse=True)
         # minus_V_periodic(supclInfo, inverse=True)
-        supclInfo   = MaterialSystemInfo(atoms_filename=supcl_atomconfig, vr_filename=supcl_vr, charge=charge, charge_pos=charge_pos, epsilon=epsilon)
+        supclInfo   = MaterialSystemInfo(
+            atoms_filename=supcl_atomconfig, vr_filename=supcl_vr, 
+            charge=charge, epsilon=epsilon)
         _, _, _, dv_supcl_0, _, _, _ = \
             diff_vatom(bulkInfo, supclInfo, sigma)
 

@@ -9,17 +9,20 @@ vr                 = "./1.lda/1.bulk/2.scf/OUT.VR"
 [potpatch.supercell]
 atomconfig         = "./1.lda/2.supercell/2.scf/atom.config"   # It's a path relative to this file.
 vr                 = "./1.lda/2.supercell/2.scf/OUT.VR"
-charge        = 1           # (setting NUM_ELECTRON) - (default NUM_ELECTRON)
-                            # `NUM_ELECTRON` is the setting in PWmat, 
-                            # means total number of occupied valence electron in the system.
-                            # Default value is the value for neutral system.
-epsilon       = 12.34
 frozen_range  = 1.0         # angstrom. default is 1.0. when frozen_range < 0, the normal make supercell code was executed without freezing atom step
                             # [for inspect]. not necessary. when it is set, `potpatch` will perform check before calculation.
                             # this setting can help confirm the "edge atom positions" is as you expect
 size          = [4, 4, 4]   # size based on bulk
                             # [for inspect]. not necessary, `potpatch` code can infer the size of supercell
                             # but this setting can help confirm the "supercell size" is as you expect
+
+[potpatch.correction]
+charge        = 1           # (setting NUM_ELECTRON) - (default NUM_ELECTRON)
+                            # `NUM_ELECTRON` is the setting in PWmat, 
+                            # means total number of occupied valence electron in the system.
+                            # Default value is the value for neutral system.
+epsilon       = 12.34
+plus_V = "periodic"
 
 [potpatch.output]
 size            = [8, 8, 8]
