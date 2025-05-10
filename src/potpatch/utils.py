@@ -147,7 +147,7 @@ def gen_counter():
 def revise_epsilon(epsilon):
     """
     input epsilon is float or list[float]
-    output epsilon is Array[float]
+    output epsilon is 2DArray[float]
     """
     if isinstance(epsilon, list):
         epsilon = np.array(epsilon)

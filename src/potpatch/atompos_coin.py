@@ -53,12 +53,12 @@ def bulk_order_mapto_supcl(bulk: AtomConfig, supcl: AtomConfig,
     supcl.positions is important
     """
     mag, mag_f = infer_supercell_size(bulk.lattice, supcl.lattice)
-    if all(mag_f <= 1):  # alloy case
+    if all(mag_f < 1):  # alloy case
         print("\n... bulk_order_mapto_supcl(): case `bulk size` > `supcl size`") 
         repeat = (1, 1, 1)
     elif all(mag_f >= 1):  # crystal case
         assert all(np.abs(mag - mag_f) < 1e-6), \
-            "... bulk_order_mapto_supcl(): case `bulk size` < `supcl size`, "\
+            "... bulk_order_mapto_supcl(): case `bulk size` <= `supcl size`, "\
             f"but `mag`{mag_f} not integer"
         repeat = mag
     else:

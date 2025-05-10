@@ -97,31 +97,42 @@ def potpatch(args):
             f"        n123: {supclInfo.vr.n123}",
             f"        nnodes: {supclInfo.vr.nnodes}",
             f"    atom.config({supclInfo.atomconfig.filename}):",
+            r"corretion:",
             f"    charge: {supclInfo.charge}",
-            f"    charge_pos: {supclInfo.charge_pos}",
-            f"epsilon: {indent(supclInfo.epsilon.__str__(), ' '*(4+9))}",
+            # f"    charge_pos: {supclInfo.charge_pos}",
+            f"    epsilon:",
+            f"{indent(supclInfo.epsilon.__str__(), ' '*(4+9))}",
+            f"    plus_V: {correction.plus_V}"
+            r"output:",
+            f"    target_size: {target_size}",
+            f"    VR({output_vr})",
+            f"    atom.config({output_atomconfig})",
             sep="\n"
         )
         return
     
-    minus_V_periodic, plus_V_single = gen_charge_correct(supclInfo, correction)
+    minus_V_periodic, plus_V_sop = gen_charge_correct(supclInfo, correction)
     minus_V_periodic(supclInfo)
     edge_match_correct(supclInfo, bulkInfo)
-    if (debg := False):
+    if (debg := True):
         supclInfo.vr.write_vr(filename="supcl.VR.debug")
+        
     suuuupclInfo = patch(supclInfo, bulkInfo, supcl_size, target_size)
     suuuupclInfo.charge, suuuupclInfo.epsilon = charge, epsilon
-    plus_V_single(suuuupclInfo)
+    plus_V_sop(suuuupclInfo)
 
     suuuupclInfo.atomconfig.write_atoms(filename=output_atomconfig)
     suuuupclInfo.vr.write_vr(filename=output_vr)
 
     if args.check.diff_vatom is not None:
-        outfile = args.check.diff_vatom.output if args.check.diff_vatom.output is not None else join(args.inputfile_dir, "OUT.diff_vatom")
-        sigma  = args.check.diff_vatom.sigma  if args.check.diff_vatom.sigma  is not None else BOHR
+        outfile = args.check.diff_vatom.output \
+            if args.check.diff_vatom.output is not None \
+            else join(args.inputfile_dir, "OUT.diff_vatom")
+        sigma  = args.check.diff_vatom.sigma  \
+            if args.check.diff_vatom.sigma  is not None else 1 * BOHR
         sigma  = float(sigma) / BOHR
 
-        plus_V_single(supclInfo)
+        plus_V_sop(supclInfo)
         r, ξ, dv_bulk, dv_supcl, ac_bulk, ac_supcl, order = \
             diff_vatom(bulkInfo, supclInfo, sigma)
         

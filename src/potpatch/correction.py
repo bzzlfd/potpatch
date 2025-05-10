@@ -212,8 +212,8 @@ def gen_charge_correct(supclInfo: MaterialSystemInfo,
             fourier_coeff = np.fft.rfftn(mesh_rho, axes=(0, 1, 2))
             mesh_rho = None
             _rho2V_fourier_coeff(fourier_coeff, rlattice)
-            fourier_coeff = None
             mesh2_V = np.fft.irfftn(fourier_coeff, axes=(0, 1, 2))
+            fourier_coeff = None
 
             if inverse:
                 suuuupclInfo.vr.mesh -= mesh2_V

@@ -1,5 +1,5 @@
 import warnings
-from textwrap import dedent
+from textwrap import indent, dedent
 
 import numpy as np
 from numba import jit, guvectorize
@@ -28,19 +28,22 @@ def inspect_ingredient(supclInfo: MaterialSystemInfo,
     supcl_vrsize = supclInfo.vr.n123 / bulkInfo.vr.n123 
     # supcl size ?integer mag
     if not all(np.abs(supcl_vrsize - np.round(supcl_vrsize, 0)) < 1e-6):
-        raise ValueError(f"""
-                         magnifacation between the two VR is not integer
-                         {supclInfo.vr.n123=}
-                         {bulkInfo.vr.n123=}
-                         """)
+        raise ValueError(
+            "magnifacation between the two VR is not integer\n"
+            # indent(f"{supclInfo.lattice.in_unit('angstrom').__str__()}", " "*8),
+            f"    {supclInfo.vr.n123=}\n"
+            f"    {bulkInfo.vr.n123=}\n"
+            )
     # Lattice and VR.n123: ?same
     lattice_mulmag = bulkInfo.lattice * supcl_vrsize
     if not supclInfo.lattice == lattice_mulmag:
-        raise ValueError(f"""
-                magnifacation between Lattice and VR_mesh is not equal
-                supclInfo.lattice({supclInfo.lattice.in_unit("angstrom")})
-                bulkInfo.lattice * mag({lattice_mulmag.in_unit("angstrom")})
-                """)
+        raise ValueError(
+            "magnifacation between Lattice and VR_mesh is not equal"
+            f"supclInfo.lattice("
+            f"    {supclInfo.lattice.in_unit("angstrom")})"
+            f"bulkInfo.lattice * mag("
+            f"    {lattice_mulmag.in_unit("angstrom")})"
+            )
 
     supcl_size = INTEGER(supcl_vrsize)
 
