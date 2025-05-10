@@ -1,5 +1,5 @@
 from os.path import join, dirname, basename, isabs
-from os import getcwd
+from os import getcwd, makedirs
 from pathlib import Path
 from textwrap import indent, dedent
 from time import perf_counter
@@ -50,71 +50,74 @@ def potpatch(args):
     supcl_size         = args.supcl.size
     frozen_range       = args.supcl.frozen_range
     
-    basedir = args.bulk.basedir if isabs(args.bulk.basedir) \
-        else join(args.inputfile_dir, args.bulk.basedir)
+    basedir = "." if args.bulk.basedir is None else args.bulk.basedir
+    basedir = basedir if isabs(basedir) else join(args.inputfile_dir, basedir)
     bulk_atomconfig    = join(basedir, args.bulk.atomconfig)
     bulk_vr            = join(basedir, args.bulk.vr        )
     bulkInfo    = MaterialSystemInfo(
         atoms_filename=bulk_atomconfig,  vr_filename=bulk_vr, 
         charge=0, epsilon=epsilon)
     # [
-    basedir = args.supcl.basedir if isabs(args.supcl.basedir) \
-        else join(args.inputfile_dir, args.supcl.basedir)
+    basedir = "." if args.supcl.basedir is None else args.supcl.basedir
+    basedir = basedir if isabs(basedir) else join(args.inputfile_dir, basedir)
     supcl_atomconfig   = join(basedir, args.supcl.atomconfig)
     supcl_vr           = join(basedir, args.supcl.vr        )
     supclInfo   = MaterialSystemInfo(
         atoms_filename=supcl_atomconfig, vr_filename=supcl_vr, 
         charge=charge, epsilon=epsilon)
     # [
+    basedir = "." if args.output.basedir is None else args.output.basedir
+    basedir = basedir if isabs(basedir) else join(args.inputfile_dir, basedir)
+    if (ifmkdir := True if args.output.mkdir is not None else False):
+        makedirs(basedir, exist_ok=True)
     output_atomconfig  = args.output.atomconfig \
         if args.output.atomconfig is not None \
         else f"atom.config_{bulkInfo.atomconfig.natoms*prod(target_size)}"
     output_vr          = args.output.vr         \
         if args.output.vr is not None \
         else f"IN.VR_{bulkInfo.atomconfig.natoms*prod(target_size)}"
-    basedir = args.output.basedir if isabs(args.output.basedir) \
-        else join(args.inputfile_dir, args.output.basedir)
     output_atomconfig  = join(basedir, output_atomconfig)
     output_vr          = join(basedir, output_vr        )
     
     supcl_size = inspect_ingredient(
         supclInfo, bulkInfo, 
         size_confirm=supcl_size, frozen_confirm=frozen_range)
+    print(
+        r"bulk:",
+        r"    lattice: (in angstrom)",
+        indent(f"{bulkInfo.lattice.in_unit('angstrom').__str__()}", " "*8),
+        f"    VR({bulkInfo.vr.filename}):",
+        f"        n123: {bulkInfo.vr.n123}",
+        f"        nnodes: {bulkInfo.vr.nnodes}",
+        f"    atom.config({bulkInfo.atomconfig.filename}):",
+        r"supercell:",
+        f"    size: {supcl_size}",
+        r"    lattice: (in angstrom)",
+        indent(f"{supclInfo.lattice.in_unit('angstrom').__str__()}", " "*8),
+        f"    VR({supclInfo.vr.filename}):",
+        f"        n123: {supclInfo.vr.n123}",
+        f"        nnodes: {supclInfo.vr.nnodes}",
+        f"    atom.config({supclInfo.atomconfig.filename}):",
+        r"corretion:",
+        f"    charge: {supclInfo.charge}",
+        # f"    charge_pos: {supclInfo.charge_pos}",
+        r"    epsilon:",
+        f"{indent(supclInfo.epsilon.__str__(), ' '*(4+9))}",
+        f"    plus_V: {correction.plus_V}"
+        r"output:",
+        f"    target_size: {target_size}",
+        f"    VR({output_vr})",
+        f"    atom.config({output_atomconfig})",
+        f"    mkdir if output_dir is not exits ({ifmkdir}) ", 
+        sep="\n"
+    )
     if args.onlyinspect:
-        print(
-            r"bulk:",
-            r"    lattice: (in angstrom)",
-            indent(f"{bulkInfo.lattice.in_unit('angstrom').__str__()}", " "*8),
-            f"    VR({bulkInfo.vr.filename}):",
-            f"        n123: {bulkInfo.vr.n123}",
-            f"        nnodes: {bulkInfo.vr.nnodes}",
-            f"    atom.config({bulkInfo.atomconfig.filename}):",
-            r"supercell:",
-            f"    size: {supcl_size}",
-            r"    lattice: (in angstrom)",
-            indent(f"{supclInfo.lattice.in_unit('angstrom').__str__()}", " "*8),
-            f"    VR({supclInfo.vr.filename}):",
-            f"        n123: {supclInfo.vr.n123}",
-            f"        nnodes: {supclInfo.vr.nnodes}",
-            f"    atom.config({supclInfo.atomconfig.filename}):",
-            r"corretion:",
-            f"    charge: {supclInfo.charge}",
-            # f"    charge_pos: {supclInfo.charge_pos}",
-            f"    epsilon:",
-            f"{indent(supclInfo.epsilon.__str__(), ' '*(4+9))}",
-            f"    plus_V: {correction.plus_V}"
-            r"output:",
-            f"    target_size: {target_size}",
-            f"    VR({output_vr})",
-            f"    atom.config({output_atomconfig})",
-            sep="\n"
-        )
         return
     
     minus_V_periodic, plus_V_sop = gen_charge_correct(supclInfo, correction)
     minus_V_periodic(supclInfo)
     edge_match_correct(supclInfo, bulkInfo)
-    if (debg := True):
+    if (debg := False):
         supclInfo.vr.write_vr(filename="supcl.VR.debug")
         
     suuuupclInfo = patch(supclInfo, bulkInfo, supcl_size, target_size)
