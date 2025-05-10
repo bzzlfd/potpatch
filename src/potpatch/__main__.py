@@ -124,8 +124,8 @@ def potpatch(args):
     suuuupclInfo.charge, suuuupclInfo.epsilon = charge, epsilon
     plus_V_sop(suuuupclInfo)
 
-    suuuupclInfo.atomconfig.write_atoms(filename=output_atomconfig)
-    suuuupclInfo.vr.write_vr(filename=output_vr)
+    suuuupclInfo.atomconfig.write(filename=output_atomconfig)
+    suuuupclInfo.vr.write(filename=output_vr)
 
     if args.check.diff_vatom is not None:
         outfile = args.check.diff_vatom.output \
@@ -172,7 +172,7 @@ def mksupcl(args):
     comment += f"-d {outsider} " if outsider is not None else ""
     comment += f"# pwd={getcwd()}"
 
-    supcl_ac.write_atoms(output, comment=comment)
+    supcl_ac.write(output, comment=comment)
 
 
 def shift(args):
@@ -189,13 +189,13 @@ def shift(args):
         if supcl is not None:
             ac    = AtomConfig(filename=supcl)
         shift_oneAtomConfig(ac, shift)
-        ac.write_atoms(ac.filename + "_shift", comment=comment)
+        ac.write(ac.filename + "_shift", comment=comment)
     elif args.count == 2:
         bulk_ac   = AtomConfig(filename=bulk)
         supcl_ac  = AtomConfig(filename=supcl)
         shift_twoAtomConfig(bulk_ac, supcl_ac, shift)
-        bulk_ac.write_atoms(bulk_ac.filename + "_shift", comment=comment)
-        supcl_ac.write_atoms(supcl_ac.filename + "_shift", comment=comment)
+        bulk_ac.write(bulk_ac.filename + "_shift", comment=comment)
+        supcl_ac.write(supcl_ac.filename + "_shift", comment=comment)
 
 
 def check_atompos(args):

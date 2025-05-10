@@ -170,7 +170,7 @@ class VR():
         self.lattice_check_trigger = lattice_check_trigger
 
         if filename is not None:
-            self.read_vr(filename=filename, vr_fmt=vr_fmt)
+            self.read(filename=filename, vr_fmt=vr_fmt)
 
         if lattice  is not None:
             self._latticeflag = f"({self.comment}) (init parameter)"
@@ -201,7 +201,7 @@ class VR():
         # TODO 检查类型, 修改类型
         pass
 
-    def read_vr(self, filename, vr_fmt="PWmat"):
+    def read(self, filename, vr_fmt="PWmat"):
         self.filename = os.path.abspath(filename)
         self.vr_fmt = vr_fmt
         with open(filename, "br") as io:
@@ -223,8 +223,8 @@ class VR():
         
         return self
 
-    def write_vr(self, filename: str, vr_fmt="PWmat", 
-                 nnodes: int | None = None, nnodes_base: int = 1):
+    def write(self, filename: str, fmt="PWmat", 
+            nnodes: int | None = None, nnodes_base: int = 1):
         """
         nnodes will be converted into `INTEGER` when writing into file
         """
@@ -242,7 +242,7 @@ class VR():
         # 1. when nnodes is     specified, check mnodes 
         # 2. when nnodes is not specified, another while loop
         # but mnodes is unknown in potpatcch
-        if vr_fmt == "Escan":
+        if fmt == "Escan":
             print("be careful of the relation between Escan parallel nnodes and vr slice nnodes")
         #     while self.mesh.size % nnodes != 0 and (nnodes & (nnodes - 1)): # nnodes is 2^n
         #         nnodes += 1
@@ -258,7 +258,7 @@ class VR():
             write_fortran_binary_block(
                 io, np.array(self.mesh.shape, dtype=INTEGER_OUT), INTEGER_OUT(nnodes))
             # AL data
-            AL = self.lattice.in_unit(self.fmt2unit[vr_fmt])
+            AL = self.lattice.in_unit(self.fmt2unit[fmt])
             AL1d = np.reshape(AL, AL.size)
             write_fortran_binary_block(io, AL1d)
             
@@ -314,7 +314,7 @@ class AtomConfig():
         self.atoms_fmt = atoms_fmt
 
         if filename is not None:
-            self.read_atoms(filename=filename, atoms_fmt=atoms_fmt)
+            self.read(filename=filename, fmt=atoms_fmt)
 
         # TODO 像 VR 一样注释类型
         if lattice        is not None: 
@@ -356,23 +356,22 @@ class AtomConfig():
         # TODO 检查类型, 修改类型, 这对 write 很重要
         pass
 
-    def read_atoms(self, filename: str, 
-                   atoms_fmt: str = "PWmat") -> np.ndarray:
+    def read(self, filename: str, fmt: str = "PWmat") -> np.ndarray:
         self.filename = os.path.abspath(filename)
         with open(filename, "r") as io:
             natoms = int(io.readline().split()[0])
             self.natoms = natoms
 
-            if atoms_fmt == "PWmat": 
+            if fmt == "PWmat": 
                 io.readline()
             AL = np.zeros((3, 3))
             for i in range(3):
                 AL[i] = np.array([REAL_8(i) for i in io.readline().split()[0:3]])
             self._latticeflag = f"({self.comment}) read fromfile({self.filename})"
-            self.lattice = Lattice(AL, self.fmt2unit[atoms_fmt], 
+            self.lattice = Lattice(AL, self.fmt2unit[fmt], 
                                    fromwhere=self._latticeflag)
 
-            if atoms_fmt == "PWmat": 
+            if fmt == "PWmat": 
                 io.readline()
             itype_list = np.zeros(natoms, dtype=INTEGER_IN)
             position_list = np.zeros((natoms, 3), dtype=REAL_8)
@@ -388,8 +387,7 @@ class AtomConfig():
         
         return self
 
-    def write_atoms(self, filename: str, comment: str | None = None, 
-                    atoms_fmt: str = "PWmat"):
+    def write(self, filename: str, comment: str | None = None, fmt: str = "PWmat"):
         with open(filename, "w") as io:
             if comment is not None:
                 comment = comment.replace("\n", " ")
@@ -397,19 +395,19 @@ class AtomConfig():
             else:
                 io.write(f"      {self.natoms} atoms\n")
 
-            if atoms_fmt == "PWmat": 
+            if fmt == "PWmat": 
                 io.write(" Lattice vector (Angstrom)\n")
-            AL = self.lattice.in_unit(self.fmt2unit[atoms_fmt])
+            AL = self.lattice.in_unit(self.fmt2unit[fmt])
             for i in range(3):
                 io.write("%20.14f%20.14f%20.14f\n" % tuple(AL[i]))
 
-            if atoms_fmt == "PWmat": 
+            if fmt == "PWmat": 
                 io.write(" Position, move_x, move_y, move_z\n")
             for i in range(self.natoms):
-                if atoms_fmt == "PWmat":
+                if fmt == "PWmat":
                     io.write("%6d %20.17f %20.17f %20.17f    %1d %1d %1d\n" % 
                              (self.itypes[i], *self.positions[i], *self.moves[i]))
-                elif atoms_fmt == "Escan":
+                elif fmt == "Escan":
                     io.write("%6d %20.17f %20.17f %20.17f    0 1\n" % 
                              (self.itypes[i], *self.positions[i]))
 
@@ -573,9 +571,9 @@ class MaterialSystemInfo():
         self.eigen      = EIGEN()
         
         if atoms_filename is not None:
-            self.atomconfig.read_atoms(atoms_filename, atoms_fmt)
+            self.atomconfig.read(atoms_filename, atoms_fmt)
         if vr_filename    is not None:
-            self.vr.read_vr(vr_filename, vr_fmt)
+            self.vr.read(vr_filename, vr_fmt)
         if vatom_filename is not None:
             self.vatom.read_vatom(vatom_filename)
         if eigen_filename is not None:
