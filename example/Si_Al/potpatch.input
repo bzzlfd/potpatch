@@ -1,0 +1,33 @@
+# this file is in `TOML` (Tom’s Obvious Minimal Language) format
+
+[potpatch]
+
+[potpatch.bulk]
+basedir       = "./1.lda/1.bulk/2.scf/"  # It's a path relative to this file.
+atomconfig    = "atom.config"
+vr            = "OUT.VR"
+
+[potpatch.supercell]
+basedir       = "./1.lda/2.supercell/2.scf/"
+atomconfig    = "atom.config"
+vr            = "OUT.VR"
+# The following keywords are optional for additional inspection. 
+# When any of them is set, `potpatch` will perform extra validation against 
+# the expected values for it.  
+frozen_range  = 1.0        # angstrom. default is 1.0. 
+size          = [4, 4, 4]  # size based on bulk 
+
+[potpatch.correction]
+charge = 1  # (setting NUM_ELECTRON) - (default NUM_ELECTRON)
+epsilon = 12.34
+
+
+[potpatch.output]
+size          = [8, 8, 8]
+basedir       = "./3.escan/2.supercell_08a/" # It's a path relative to this file.
+mkdir         = true
+atomconfig    = "atom.config"
+vr            = "IN.VR"
+
+# [potpatch.check.diff_vatom]
+# sigma = 1
