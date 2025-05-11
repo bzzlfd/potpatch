@@ -7,13 +7,14 @@ from numba import jit, guvectorize
 from potpatch.objects import Lattice, VR, AtomConfig, MaterialSystemInfo
 from potpatch.supercell import make_supercell, modify_supercell, closed_to_edge
 from potpatch.atompos_coin import check_atompos_consistency
-from potpatch.utils import timing
+from potpatch.utils import timing, log
 from potpatch.datatype import REAL_8, INTEGER
 
 
 def inspect_ingredient(supclInfo: MaterialSystemInfo,
                        bulkInfo: MaterialSystemInfo,
                        size_confirm=None, frozen_confirm=None):
+    log(f"{inspect_ingredient.__name__}")
     """
     size_confirm: optional parameter `potpatch.supercell.size` in "potpatch.input"
                 the `supercell_size` information is infered from `atom.config` and `VR` files, so
@@ -25,6 +26,7 @@ def inspect_ingredient(supclInfo: MaterialSystemInfo,
     """
 
     # supcl size inference
+    log("infer supercell size from VR.n123")  # >log
     supcl_vrsize = supclInfo.vr.n123 / bulkInfo.vr.n123 
     # supcl size ?integer mag
     if not all(np.abs(supcl_vrsize - np.round(supcl_vrsize, 0)) < 1e-6):
@@ -35,15 +37,16 @@ def inspect_ingredient(supclInfo: MaterialSystemInfo,
             f"    {bulkInfo.vr.n123=}\n"
             )
     # Lattice and VR.n123: ?same
+    log("check if the size inference above matches the lattice size.")  # >log
     lattice_mulmag = bulkInfo.lattice * supcl_vrsize
     if not supclInfo.lattice == lattice_mulmag:
         raise ValueError(
-            "magnifacation between Lattice and VR_mesh is not equal"
-            f"supclInfo.lattice("
-            f"    {supclInfo.lattice.in_unit("angstrom")})"
-            f"bulkInfo.lattice * mag("
-            f"    {lattice_mulmag.in_unit("angstrom")})"
-            )
+            "Magnification between Lattice and VR_mesh is not equal\n"
+            "supclInfo.lattice:\n"
+            f"{np.array2str(supclInfo.lattice.in_unit('angstrom'), prefix='    ')}\n"
+            "bulkInfo.lattice * mag:\n"
+            f"{np.array2str(lattice_mulmag.in_unit('angstrom'), prefix='    ')}"
+        )
 
     supcl_size = INTEGER(supcl_vrsize)
 
@@ -58,8 +61,7 @@ def inspect_ingredient(supclInfo: MaterialSystemInfo,
             It's recommended that forcibly set `N123` to the even numver.
             """))
 
-    if supclInfo.charge is None:
-        warnings.warn("information of supercell `charge` is not given")
+    log("infer supercell size from VR.n123")  # >log
     if supclInfo.charge_pos is None:
         supclInfo.charge_pos = np.array([0., 0., 0.])
     else:
@@ -75,39 +77,38 @@ def inspect_ingredient(supclInfo: MaterialSystemInfo,
                     `charge_pos` is too close to the boundary, full relaxation is questionable.
                     Do your own check.
                 """))
-    if supclInfo.epsilon is None:
-        raise ValueError("information of supercell `epsilon` is not given")
 
-    if size_confirm is not None:
-        print(f"{size_confirm = } is specified ... ", end="")
+    if size_confirm is not None:       
+        log(f"{size_confirm = } is specified ... ", end="")  # >log
         if not all(supcl_size == size_confirm):
             warnings.warn(f"supcl_size = {list(supcl_size)} and size_confirm = {list(size_confirm)}")
-            print("")
+            log("", unadorned=True)
         else:
-            print("no error")
+            log("no error", unadorned=True)
     if (frozen_confirm is not None):
-        print(f"{frozen_confirm = } is specified ... ", end="")
+        log(f"{frozen_confirm = } is specified ... ", end="")  # >log
         nwarn, max_dist = check_atompos_consistency(
                                              bulkInfo.atomconfig, 
                                              supclInfo.atomconfig, 
                                              frozen_range=frozen_confirm, 
                                              supcl_size=supcl_size)
         if nwarn == 0:
-            print("no error")
+            log("no error", unadorned=True)
         elif nwarn > 0:
-            print(f"{nwarn} warnings:  max_distance = {max_dist} angstrom")
+            log(f"{nwarn} warnings:  max_distance = {max_dist} angstrom", unadorned=True)
     return supcl_size
 
 
 def patch(supclInfo: MaterialSystemInfo, bulkInfo: MaterialSystemInfo,
           supcl_size, target_size) -> MaterialSystemInfo:
+    log(f"{patch.__name__}")
     suuuupclInfo = MaterialSystemInfo()
     suuuupclInfo.charge     = supclInfo.charge
     suuuupclInfo.charge_pos = supclInfo.charge_pos
 
-    suuuupclInfo.atomconfig = patch_atom_v2(
+    suuuupclInfo.atomconfig = patch_atom_v2(  # >log
         supclInfo.atomconfig, bulkInfo.atomconfig, supcl_size, target_size)
-    suuuupclInfo.vr = patch_vr(
+    suuuupclInfo.vr = patch_vr(  # >log
         supclInfo.vr, bulkInfo.vr, supcl_size, target_size)
     return suuuupclInfo
 
@@ -119,6 +120,7 @@ def patch_atom(supclAtom: AtomConfig, bulkAtom: AtomConfig,
     """
     resolution is bulk, supcl_size should be even numbers
     """
+    log(f"{patch_atom.__name__}")
     supclAtom.revise_atomsposition()
     bulkAtom.revise_atomsposition()
 
@@ -168,6 +170,7 @@ def patch_atom_v2(supclAtom: AtomConfig, bulkAtom: AtomConfig,
     another implement of patch_atom, break the bulkcell-resolution.
     but hidden issues may arise.
     """
+    log(f"{patch_atom_v2.__name__}")
     supclAtom.revise_atomsposition()
     bulkAtom.revise_atomsposition()
 
@@ -223,6 +226,7 @@ def patch_atom_v2(supclAtom: AtomConfig, bulkAtom: AtomConfig,
 
 @timing()
 def patch_vr(supclVR: VR, bulkVR: VR, supcl_size, target_size) -> VR:
+    log(f"{patch_vr.__name__}")
     suuuupclVR = bulkVR * target_size
 
     # @jit(nopython=True)

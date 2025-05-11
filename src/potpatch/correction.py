@@ -3,7 +3,7 @@ from typing import overload
 
 import numpy as np
 from numpy import pi
-from numpy import prod, abs, sqrt
+from numpy import prod, abs, sqrt, sinc
 from numpy.linalg import norm, inv, det, eigvalsh
 from numba import jit, guvectorize, prange
 
@@ -11,6 +11,7 @@ from potpatch.utils import simpson, timing, NameTuple, revise_epsilon
 from potpatch.constant import HA, EPSILON0, BOHR
 from potpatch.datatype import REAL_8
 from potpatch.objects import Lattice, VR, AtomConfig, MaterialSystemInfo
+from potpatch.utils import log
 
 
 def gen_charge_correct(supclInfo: MaterialSystemInfo, 
@@ -27,9 +28,11 @@ def gen_charge_correct(supclInfo: MaterialSystemInfo,
 
     generate functions
     """
+    log(f"{gen_charge_correct.__name__}")
+
     @jit(nopython=True)
     def charge_density(charge, r, R_cutoff):
-        return np.sinc(r/R_cutoff) * (np.pi / (4*R_cutoff**3)) * charge \
+        return sinc(r/R_cutoff) * (pi / (4*R_cutoff**3)) * charge \
             if r < R_cutoff else 0
 
     AL      = supclInfo.lattice.AL_AU
@@ -54,9 +57,8 @@ def gen_charge_correct(supclInfo: MaterialSystemInfo,
     R = chargemodel_R(AL, epsilon, charge_pos)
     _n = (4/3*np.pi * R**3) / (vol / prod(n123)) * sqrt(prod(eps_ii))
     _n = int(round(_n))
-    print(
-        f"gen_charge_correct: charge_model.radius = "
-        f"{R*BOHR*max(sqrt(eps_ii)):.3f} angstrom\n"
+    log(  # >log
+        f"charge_model.radius = {R*BOHR*max(sqrt(eps_ii)):.3f} angstrom\n"
         f"    about {_n}/{prod(n123)} grid points in it. "
     )
 
@@ -93,11 +95,13 @@ def gen_charge_correct(supclInfo: MaterialSystemInfo,
                         r[2] * inv_eps[2, 2] * r[2]
                     r = np.sqrt(r)
                     mesh_rho[i, j, k] = charge_density(charge, r, R)
+    log("make rho mesh")  # >log
     _make_mesh_rho(mesh_rho, mesh_rho.shape)
     
     if (debug := False):
-        VR(lattice=supclInfo.lattice, mesh=mesh_rho).write_vr("model_charge")
+        VR(lattice=supclInfo.lattice, mesh=mesh_rho).write("model_charge")
     
+    log("(real) FFT 3D")  # >log
     fourier_coeff = np.fft.rfftn(mesh_rho, axes=(0, 1, 2))
 
     @timing()
@@ -138,8 +142,10 @@ def gen_charge_correct(supclInfo: MaterialSystemInfo,
                             -1                         # ∇⋅ε∇V(r)=-ρ(r）
                             * -fourier_coeff[i, j, k]  # exp(iG⋅r)
                             / GeG / (EPSILON0)) / eps_sqrt
+    log("rho2V in G-space")  # >log
     _rho2V_fourier_coeff(fourier_coeff, rlattice)
 
+    log("(real) invFFT 3D")  # >log
     mesh_V = np.fft.irfftn(fourier_coeff, axes=(0, 1, 2))
     mesh_rho = None
     fourier_coeff = None
@@ -150,6 +156,7 @@ def gen_charge_correct(supclInfo: MaterialSystemInfo,
         modify its 3D-array vr mesh, 
         TODO input VR but not MatInfo
         """
+        log(f"{minus_V_periodic.__name__}")
         if inverse:
             supclInfo.vr.mesh += mesh_V
         else:
@@ -195,6 +202,7 @@ def gen_charge_correct(supclInfo: MaterialSystemInfo,
             modify its 3D-array vr mesh, 
             TODO input VR but not MatInfo
             """
+            log(f"{plus_V_single.__name__}")
             if inverse:
                 _plus_V_single(suuuupclInfo.vr.mesh, inverse=-1.0)
             else:
@@ -204,6 +212,7 @@ def gen_charge_correct(supclInfo: MaterialSystemInfo,
     
     elif correction.plus_V == "periodic":
         def plus_V_periodic(suuuupclInfo: MaterialSystemInfo, inverse=False):
+            log(f"{plus_V_periodic.__name__}")
             # _make_mesh_rho, AL, delta_AL, R, charge 
             mesh_rho = np.zeros_like(suuuupclInfo.vr.mesh)
             _make_mesh_rho(mesh_rho, n123=supclInfo.vr.n123)
@@ -272,18 +281,19 @@ def edge_match_correct(supclInfo: MaterialSystemInfo, bulkInfo: MaterialSystemIn
     """
         TODO input VR but not MatInfo
     """
+    log(f"{edge_match_correct.__name__}")
     supclmesh     = supclInfo.vr.mesh
     bulkmesh      = bulkInfo.vr.mesh
 
     diff, num, num_left = edge_diff(supclmesh, bulkmesh, (0, 1, 2))
     edge_shift, sigma = mean_std(diff)
 
-    print(f"edge shift (V_align): {edge_shift*HA*1000:6.2f} meV, "
+    log(f"edge shift (V_align): {edge_shift*HA*1000:6.2f} meV, "  # >log
           f"{num-num_left}/{num} data detached")
-    print(f"standard deviation of diffs at the boundary: "
+    log(f"standard deviation of diffs at the boundary: "  # >log
           f"{sigma*HA*1000:6.2f} meV")
 
-    if (verbose := True):
+    if (verbose := False):
         diff_yz, m1, ml1 = edge_diff(supclmesh, bulkmesh, (0,))
         diff_xz, m2, ml2 = edge_diff(supclmesh, bulkmesh, (1,))
         diff_xy, m3, ml3 = edge_diff(supclmesh, bulkmesh, (2,))

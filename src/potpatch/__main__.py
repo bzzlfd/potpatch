@@ -22,6 +22,7 @@ from potpatch.atompos_coin import check_atompos_consistency
 from potpatch.diff_vatom import diff_vatom, write_diffvatom
 from potpatch.parse import cli_arg_parse, file_input_parse
 from potpatch.utils import revise_epsilon
+from potpatch.utils import log
 
 
 def main():
@@ -79,10 +80,11 @@ def potpatch(args):
     output_atomconfig  = join(basedir, output_atomconfig)
     output_vr          = join(basedir, output_vr        )
     
-    supcl_size = inspect_ingredient(
+    supcl_size = inspect_ingredient(  # >log ~0/6~
         supclInfo, bulkInfo, 
         size_confirm=supcl_size, frozen_confirm=frozen_range)
-    print(
+    log("\n==> summary info <==",)  # >log
+    log(  # >log # >log
         r"bulk:",
         r"    lattice: (in angstrom)",
         indent(f"{bulkInfo.lattice.in_unit('angstrom').__str__()}", " "*8),
@@ -108,26 +110,30 @@ def potpatch(args):
         f"    target_size: {target_size}",
         f"    VR({output_vr})",
         f"    atom.config({output_atomconfig})",
-        f"    mkdir if output_dir is not exits ({ifmkdir}) ", 
-        sep="\n"
+        f"    mkdir if output_dir is not exits ({ifmkdir}) ",
+        # sep="\n"
     )
+    log("==> summary end <==\n",)  # >log
     if args.onlyinspect:
         return
     
-    minus_V_periodic, plus_V_sop = gen_charge_correct(supclInfo, correction)
-    minus_V_periodic(supclInfo)
-    edge_match_correct(supclInfo, bulkInfo)
+    minus_V_periodic, plus_V_single = gen_charge_correct(supclInfo, correction)  # >log ~1/6~
+    minus_V_periodic(supclInfo)  # >log ~2/6~
+    edge_match_correct(supclInfo, bulkInfo)  # >log ~3/6~ 
     if (debg := False):
         supclInfo.vr.write_vr(filename="supcl.VR.debug")
         
-    suuuupclInfo = patch(supclInfo, bulkInfo, supcl_size, target_size)
+    suuuupclInfo = patch(supclInfo, bulkInfo, supcl_size, target_size)  # >log ~4/6~
     suuuupclInfo.charge, suuuupclInfo.epsilon = charge, epsilon
-    plus_V_sop(suuuupclInfo)
+    plus_V_single(suuuupclInfo)  # >log ~5/6~
 
+    log("write atomconfig file")  # >log ~6/6~
     suuuupclInfo.atomconfig.write(filename=output_atomconfig)
+    log("write vr file")  # >log ~6/6~
     suuuupclInfo.vr.write(filename=output_vr)
 
     if args.check.diff_vatom is not None:
+        log("calculate diff_vatom")  # >log 
         outfile = args.check.diff_vatom.output \
             if args.check.diff_vatom.output is not None \
             else join(args.inputfile_dir, "OUT.diff_vatom")
@@ -135,12 +141,12 @@ def potpatch(args):
             if args.check.diff_vatom.sigma  is not None else 1 * BOHR
         sigma  = float(sigma) / BOHR
 
-        plus_V_sop(supclInfo)
+        plus_V_single(supclInfo)  # >silence
         r, ξ, dv_bulk, dv_supcl, ac_bulk, ac_supcl, order = \
             diff_vatom(bulkInfo, supclInfo, sigma)
         
-        # plus_V_single(supclInfo,    inverse=True)
-        # minus_V_periodic(supclInfo, inverse=True)
+        # plus_V_single(supclInfo,    inverse=True)  # >silence
+        # minus_V_periodic(supclInfo, inverse=True)  # >silence
         supclInfo   = MaterialSystemInfo(
             atoms_filename=supcl_atomconfig, vr_filename=supcl_vr, 
             charge=charge, epsilon=epsilon)

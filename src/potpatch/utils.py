@@ -1,12 +1,11 @@
-from textwrap import dedent
-from time import perf_counter
-
 import numpy as np
 
 
 # =============================================
 # fortran binary io
 # =============================================
+from textwrap import dedent
+
 from potpatch.datatype import REAL_8, INTEGER, INTEGER_4
 
 
@@ -160,6 +159,9 @@ def revise_epsilon(epsilon):
 # =============================================
 # decorators 
 # =============================================
+from time import perf_counter
+from functools import wraps
+
 PRINT_TIMING_DEFAULT   = False
 PRINT_TIMING_ALL_CLOSE = None
 PRINT_TIMING_ALL_OPEN  = None
@@ -169,6 +171,7 @@ def timing(tprint=PRINT_TIMING_DEFAULT):
     assert PRINT_TIMING_ALL_CLOSE is None or PRINT_TIMING_ALL_OPEN is None
     
     def timing_decorator(func):
+        @wraps(func)
         def _timing(*args, **kwargs):
             nonlocal tprint
             t0 = perf_counter()
@@ -182,3 +185,112 @@ def timing(tprint=PRINT_TIMING_DEFAULT):
         return _timing
 
     return timing_decorator
+
+
+# =============================================
+# log component
+# =============================================
+from textwrap import indent
+from datetime import datetime
+import inspect
+import re
+
+
+def log(*message, end="\n",
+        unadorned=False, log_level=1, pre_idt = 0, timestamp=False):
+    """
+    Notes
+    -----
+    - indent
+    """
+    adorn = ""
+    if timestamp:
+        ts = datetime.now().strftime("%Y-%m-%d %H:%M")
+        ts = f"({ts})"
+
+    if codecontext_has_n(r"#.*>silence") >= 1:
+        return
+    
+    n_idt = max(0, codecontext_has_n(r"#.*?>log") - 1)
+    idt = ' ' * (4 * (pre_idt + n_idt) + len(adorn))
+    if unadorned:
+        adorn = ''
+        idt = ''
+    for msg in message:
+        print(indent(msg, idt), end=end)
+
+
+def codecontext_has_n(mark: str) -> int:   
+    """Count occurrences of a marker string in the call stack's code contexts.
+
+    Parameters
+    ----------
+    mark : str
+        String pattern to search for (will be regex-escaped). Special regex
+        characters are automatically escaped.
+
+    Returns
+    -------
+    : int
+        Number of frames where the marker appears in code context lines.
+        Returns 0 if no matches found or code contexts unavailable.
+
+    Notes
+    -----
+    - Only checks the active line (frame.index) of each frame
+    - `findall` but not `search`
+    - Safe against None code_context (e.g. for builtin functions)
+    """
+    n = 0
+
+    stack = inspect.stack()
+    for frame in stack[2:]:
+        code_context = frame.code_context
+        if code_context:
+            n += len(re.findall(mark, code_context[frame.index]))
+    
+    return n
+
+
+def extract_logmark(mark: str, mark_f):
+    """Extract and process log context from caller's code line using regex 
+    patterns.
+    
+    Parameters
+    ----------
+    mark : str
+        Regex pattern to search in log content
+    mark_f : callable
+        Function to process matched groups from mark pattern
+        
+    Returns
+    -------
+    any or None
+        Processed result from mark_f if both patterns match, otherwise None
+        
+    Examples
+    --------
+    >>> def f():
+        codecontext_get(r'(\d+)', lambda x: int(x)*2)
+    >>> f()  # >log test123
+    246
+    """
+    stack = inspect.stack()
+    "stack[0]: inspect.stack()"
+    "stack[1]: extract_logmark(...)"
+    caller_frame = stack[2] 
+    code_context = caller_frame.code_context
+    code_line = code_context[caller_frame.index]
+
+    # Match log pattern format: #...>log...
+    log_expr_match = re.search(r'#.*>log(.*)$', code_line)
+    if not log_expr_match:
+        return None
+        
+    log_content = log_expr_match.group(1)
+    
+    mark_match = re.search(mark, log_content)
+    if not mark_match:
+        return None
+        
+    return mark_f(*mark_match.groups())
