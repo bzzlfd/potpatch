@@ -64,10 +64,12 @@ This tutorial focuses on the usage of the program. If you feel confused while re
 
 ## Contribution
 This code is in Alpha version. 
-Bug reports, more natural usage recommends, unambiguous statements, implement of modify Pseudo Potentail, test codes, improvements ... are all welcome. 
+Bug reports, more natural usage recommends, unambiguous statements, tests, improvements ... are all welcome. 
+
+> Please feel free to get in touch. -> (zzkai@csrc.ac.cn) 
+> 私信辱骂/帮他抗压/让他爽到 -> (zzkai@csrc.ac.cn) 
 
 `doc/` also have some notes to help understand the program.
-
 
 
 ## References
