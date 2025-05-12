@@ -1,8 +1,15 @@
 test/
 test*.py
+
 doc/note.md
 doc/_*
+
 *__pycache__
+*egg-info
+build
+
+.*
 *.nb
 todo*
+readme-first-for-dev.md
 *old

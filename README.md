@@ -3,12 +3,24 @@ This is an implementation of the potentail patching, which is a semiconductor sh
 
 
 
-## Installation
-### Directly with pip
+## Installation (with `pip`)
+### Directly via the network (the machine has access to Github)
 ```bash
-# download and enter the `potpatch` project directory, 
-# so that `pip` will find `potpatch` project file `pyproject.toml` at current directory `.`
-pip3 install .
+pip3 install git+https://github.com/bzzlfd/potpatch.git
+
+# try it out 
+potpatch --version
+```
+
+or specify a branch to get the latest (in-development) features, e.g. 
+```bash
+pip3 install git+https://github.com/bzzlfd/potpatch.git@im_pos
+```
+
+### Download and install (the network is accessible except for GitHub)
+download the `potpatch` project to your local machine, and execute the following command:
+```bash
+pip3 install <local potpatch project path>
 
 # try it out 
 potpatch --version
@@ -16,7 +28,7 @@ potpatch --version
 
 ### For development
 ```bash
-pip3 install -e .
+pip3 install -e <local potpatch project path>
 ```
 
 ### Some suggestions on offline machine installation
@@ -36,8 +48,8 @@ there are some suggestions:
    1. I'm concerned that this installation method might encounter platform issues, but the advantage of this method is that you don't need to download an entire Anaconda.
    2. The fortunate thing is, these *build dependencies* are compatible with all platforms. 
 5. Additionally, there are some unorthodox methods.
-   1. modify `PYTHONPATH` environment variable or copy this code into a directory where Python knows ([`python -m site`](https://docs.python.org/3/library/site.html) will provide you with some information.).
-   2. These are some hacks for Python import mechanisms. This way, you can use this program through `python -m potpatch`. 
+   1. modify `PYTHONPATH` environment variable or copy this code into a directory where Python knows ([`python3 -m site`](https://docs.python.org/3/library/site.html) will provide you with some information.).
+   2. These are some hacks for Python import mechanisms. This way, you can use this program through `python3 -m potpatch`. 
 
 
 
@@ -52,10 +64,12 @@ This tutorial focuses on the usage of the program. If you feel confused while re
 
 ## Contribution
 This code is in Alpha version. 
-Bug reports, more natural usage recommends, unambiguous statements, implement of modify Pseudo Potentail, test codes, improvements ... are all welcome. 
+Bug reports, more natural usage recommends, unambiguous statements, tests, improvements ... are all welcome. 
+
+> Please feel free to get in touch. -> (zzkai@csrc.ac.cn) 
+> 私信辱骂/帮他抗压/让他爽到 -> (zzkai@csrc.ac.cn) 
 
 `doc/` also have some notes to help understand the program.
-
 
 
 ## References
