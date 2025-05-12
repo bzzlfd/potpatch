@@ -1,66 +1,78 @@
 ## `potpatch`
 ### `potpatch -i INPUT`
-主体是一个 `potpatch` 程序, 它是一个假设杂质原子位于 [0, 0, 0] 位置的 potential patching 方法实现. 
-它通过 `-i, --input INPUT` 参数指定控制文件, 当没指定时, 默认会在当前工作目录下寻找 `potpatch.input` 文件
-当读取完输入文件后, 在先对食材进行读取和检查, 然后开始 patch 和 correction 等计算过程, `-I, --only-inspect` 参数可以让计算在开始之前停止并输出一些它的检查结果(或者在输出结果之前报错), 它或许对你检查错误有帮助.
 
-### `potpatch mksupcl -i INPUT`
-`potpatch` 还包含一个子命令 `potpatch mksupcl`.
-potentail patching 过程中需要制作超胞, 这个超胞在普通超胞的基础上需要在 supercell 和 bulk 边界处固定住原子位置, 这对 potential patching 有好处. `potpatch mksupcl` 会帮忙完成这些工作. 
-它的控制文件同样由 `-i, --input INPUT` 指定. 
+`potpatch` 是一个基于杂质原子位于 `[0, 0, 0]` 坐标位置的势场修正 (potential patching) 方法实现工具.
+
+- 通过 `-h` 或 `--help` 查看帮助
+- 通过 `-i` 或 `--input` 参数指定控制文件路径
+  - 当未指定输入文件时，程序默认在当前工作目录查找 `potpatch.input` 文件
+- 调试选项 `-I/--only-inspect`: 
+  - 可在计算前中断程序并输出检查结果
 
 
-## input文件
-input 文件是一个 toml 格式文件, 如需改写的 input 文件, 请注意 toml 语法. 但通常你不需要了解 toml 语法, 你只要少量更改模板文件中的少量片段足够了. 
 
-它包含了很多 `potpatch` 主程序/子程序 输入/输出 文件位置, 这里的文件位置被设计成相对于 input 文件所处目录的相对路径, 这样做的好处是即使过了很久你也是可以通过检查输入文件了解自己之前做了什么.
-你可以把 `mksupcl`, `modifypsp` 等命令的输入文件放在一个文件, 也可以把它们分开放置. 每个(sub)程序只会关心自己 header 下那部分参数
-主体 `potpatch` 程序输入文件有一些参数和 `mksupcl` 的输入参数重叠, 但因为我假设 supercell 并不一定来自 `mksupcl` 子程序, `potpatch` 主体程序也不应该依赖它, 所以重叠参数的角色是检查潜在错误而非左右程序运行结果
+## INPUT 文件
+输入文件采用 **TOML** 格式, 通常只需修改模板中的关键参数即可, 无需完全掌握 TOML 语法. 
+
+所有相对路径均基于输入文件所在目录解析. 这样做的好处是即使过了很久也可以了解自己之前做了什么. 
+
+所有控制参数在  `[potpatch]` 节下. 
 
 ### `[potpatch]`
-这个 header 下的参数控制 `potpatch` 主程序行为. 当执行 `potpatch` 主程序时, 程序只关心这个 header 下的参数
+这个 section 下的参数控制 `potpatch` 主程序行为. 当执行 `potpatch` 主程序时, 程序只关心这个 section 下的参数
 #### `[potpatch.bulk]`
+- `basedir` (string)
+  - 该小节下文件相对目录. 
+  - 可以是绝对路径或相对路径, 默认是 `"."`. 当设为相对路径时, 将是基于 INPUT 文件进行解析. 
 - `atomconfig` (string)
   - 供 patch 的 bulk 的晶体结构文件位置
 - `vr` (string)
   - 供 patch 的 bulk 的势场文件位置
 
 #### `[potpatch.supercell]`
+- `basedir` (string)
+  - 该小节下文件相对目录. 
+  - 可以是绝对路径或相对路径, 默认是 `"."`. 当设为相对路径时, 将是基于 INPUT 文件进行解析. 
 - `atomconfig` (string)
   - 供 patch 的 supercell 的晶体结构文件位置
 - `vr` (string)
   - 供 patch 的 supercell 的势场文件位置
-- `charge` (integer|float)
-  - `(setting NUM_ELECTRON) - (default NUM_ELECTRON)`, `NUM_ELECTRON` 是 PWmat 中的参数
-- `epsilon` (float)
-  - 该体系的介电常数
+  
 - `frozen_range` (float) [optional]
-  - 含义为距离 supercell 的 patch 边界内 `frozen_range` *angstrom* 内的原子位置与 bulk 一致
-  - 这是会被传入 patch 前检查函数的参数, 目的是帮助用户确认他所 patch 的材料全是如他希望的那样
+  - 距离 supercell 的 patch 边界内 `frozen_range` Å 内的原子位置与 bulk 一致
+  - 如果它被设置, 程序将在预处理进行额外检查，确保输入体系符合预期
 - `size` (array) [optional]
-  - supercell 相较于 bulk 的尺寸
-  - 这是会被传入 patch 前检查函数的参数, 目的是帮助用户确认他所 patch 的材料全是如他希望的那样
+  - supercell 相较于 bulk 的扩胞倍数
+  - 如果它被设置, 程序将在预处理进行额外检查，确保输入体系符合预期
+
+#### `[potpatch.correction]`
+- `charge` (integer|float)
+  - `(setting NUM_ELECTRON) - (default NUM_ELECTRON)`, `NUM_ELECTRON` 是 PWmat 中的控制电子数参数.
+- `epsilon` (float|2darray)
+  - 该体系的介电常数
+
 
 #### `[potpatch.output]`
+- `basedir` (string)
+  - 该小节下文件相对目录. 
+  - 可以是绝对路径或相对路径, 默认是 `"."`. 当设为相对路径时, 将是基于 INPUT 文件进行解析. 
+- `mkdir` (bool)
+  - 是否自动创建目录
+  - 默认是 `false`, 此时写入文件的目录不存在将报错.
 - `size` (array)
   - 想要 patch 出的 suuuupercell 尺寸
 - `atomconfig` (string)
-  - patch 出的 suuuupercell 的晶体结构文件存放位置 (目前代码中, 如果指定了不存在的目录会报错而不是创建该目录)
+  - patch 出的 suuuupercell 的晶体结构文件存放位置
 - `vr` (string)
-  - patch 出的 suuuupercell 的势场文件存放位置 (目前代码中, 如果指定了不存在的目录会报错而不是创建该目录)
+  - patch 出的 suuuupercell 的势场文件存放位置
 
-### `[mksupcl]`
-这个 header 下的参数控制 `potpatch mksupcl` 子程序行为. 当执行 `potpatch mksupcl` 子程序时, 程序只关心这个 header 下的参数
 
-- `bulk_atomconfig` (string)
-  - 供制作 supercell 的 bulk 的晶体结构文件位置
-- `supercell_size` (array)
-  - 想要制作的 supercell 相对 bulk 的尺寸
-- `frozen_range` (float)
-  - 在晶体结构文件中, 将距离 supercell 的 patch 边界内 `frozen_range` *angstrom* 内的原子的 `move` 设置成 `0 0 0`
-  - 如果 `frozen_range` < 0, 则是不更新原子位置的普通制作超胞
+#### `[potpatch.check.diff_vatom]`
+可选参数, 当它被设置
+- `sigma` (float)
+  - 高斯加权平均中展宽参数
+  - 单位是 Å. 默认是 0.5279 Å. 
 - `output` (string)
-  - 所制作超胞的晶体结构文件存放位置 (目前代码中, 如果指定了不存在的目录会报错而不是创建该目录)
-
-
+  - 输出文件名
+  - 默认是 `"OUT.diff_vatom"`
 

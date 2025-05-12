@@ -1,4 +1,4 @@
-本篇文档是阅读和开发源码前的 guideline 
+本篇文档是阅读和开发源码前的 guide
 
 本代码目前没有 style 规范, 您贡献代码就已经让它向规范进步了. 
 
@@ -18,7 +18,7 @@
 ## 代码结构
 ### version
 一个存放版本的地方, 为了让每个读入版本的地方都得到一致的版本
-使用版本的地方有 __init__, parse.py, pyproject.toml
+使用版本的地方有 `__init__`, `parse.py`, `pyproject.toml`
 
 ### 入口文件
 `__init__.py`, `__main__.py`, `parse.py` 三个是入口相关文件:
@@ -149,7 +149,7 @@ $$
 
 $$
 \rho(r)=\begin{cases}
-sinc(r/R_0), & r \lt R_0 \\
+\text{sinc}(r/R_0), & r \lt R_0 \\
 0 . & r \ge R_0 .
 \end{cases}
 $$
@@ -168,8 +168,7 @@ $$
 `__main__.potpatch` 中有做patch和修正的顺序
 
 
-### `mksupcl` 脚本所在
-`supercell.py` 放置 `mksupcl` 脚本的代码, 但具体的晶体结构操作 (包括扩胞, 修订原子分数坐标, 原子排序等) 的实现位于 `AtomConfig` class 当中. 
+
 
 ### 一些基础
 `constant.py` 存放了一些常数
