@@ -41,10 +41,9 @@ def main():
 
 
 def potpatch(args):
-    target_size        = args.output.size
+    target_size        = args.patch.size
     # [
     correction = args.correction
-    charge     = correction.charge
     epsilon    = correction.epsilon
     epsilon    = revise_epsilon(epsilon)
 
@@ -63,6 +62,7 @@ def potpatch(args):
     basedir = basedir if isabs(basedir) else join(args.inputfile_dir, basedir)
     supcl_atomconfig   = join(basedir, args.supcl.atomconfig)
     supcl_vr           = join(basedir, args.supcl.vr        )
+    charge             = args.supcl.charge
     supclInfo   = MaterialSystemInfo(
         atoms_filename=supcl_atomconfig, vr_filename=supcl_vr, 
         charge=charge, epsilon=epsilon)
@@ -100,8 +100,8 @@ def potpatch(args):
         f"        n123: {supclInfo.vr.n123}",
         f"        nnodes: {supclInfo.vr.nnodes}",
         f"    atom.config({supclInfo.atomconfig.filename}):",
-        r"corretion:",
         f"    charge: {supclInfo.charge}",
+        r"corretion:",
         # f"    charge_pos: {supclInfo.charge_pos}",
         r"    epsilon:",
         f"{indent(supclInfo.epsilon.__str__(), ' '*(4+9))}",

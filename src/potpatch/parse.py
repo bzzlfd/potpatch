@@ -25,7 +25,7 @@ def cli_arg_parse():
          "-V", "--version", 
          action="store_true")
     
-    # cli sub-commands
+    # (cli) sub-commands
     subparsers = parser_potpatch.add_subparsers(
          help='sub-command help', 
          dest="func")
@@ -182,7 +182,7 @@ def file_input_parse(PROG, args):
     if PROG == "potpatch":
         onlyinspect = args.onlyinspect
         sub_settings = settings["potpatch"]
-
+   
         bulk = NameTuple(
             basedir    = sub_settings["bulk"].get("basedir", None), 
             atomconfig = sub_settings["bulk"]["atomconfig"], 
@@ -191,21 +191,24 @@ def file_input_parse(PROG, args):
             basedir      = sub_settings["supercell"].get("basedir", None), 
             atomconfig   = sub_settings["supercell"]["atomconfig"], 
             vr           = sub_settings["supercell"]["vr"], 
+            charge       = sub_settings["supercell"]["charge"], 
             # charge_pos   = sub_settings["supercell"].get("charge_pos", None), 
             size         = sub_settings["supercell"].get("size", None),
-            frozen_range = sub_settings["supercell"].get("frozen_range", None))
+            frozen_range = sub_settings["supercell"].get("frozen_range", None)
+            )
         
         correction = NameTuple(
-             epsilon      = sub_settings["correction"]["epsilon"], 
-             charge       = sub_settings["correction"]["charge"], 
-             plus_V       = sub_settings["correction"].get("plus_V", "single"), 
-             # `plus_V` is an option:
-             #      "single": plus_V_single(suuuupleVR) after patching
-             #      "periodic": plus_V_periodic(suuuupleVR) after patching
-        )
-
+            epsilon      = sub_settings["correction"]["epsilon"], 
+            # `plus_V` is an option:
+            #      "single": plus_V_single(suuuupleVR) after patching
+            #      "periodic": plus_V_periodic(suuuupleVR) after patching
+            plus_V       = sub_settings["correction"].get("plus_V", "single"), 
+            )
+   
+        patch = NameTuple(
+            size = sub_settings["patch"]["size"],)
+   
         output = NameTuple(
-            size       = sub_settings["output"]["size"], 
             basedir    = sub_settings["output"].get("basedir", None), 
             mkdir      = sub_settings["output"].get("mkdir", None),
             atomconfig = sub_settings["output"].get("atomconfig", None), 
@@ -219,16 +222,18 @@ def file_input_parse(PROG, args):
                     output = check_settings["diff_vatom"].get("output", None),
                     sigma  = check_settings["diff_vatom"].get("sigma", None))  # angstrom
         check = NameTuple(
-            diff_vatom = diff_vatom,)
+            diff_vatom = diff_vatom,
+            )
         
-        ret_nt = NameTuple(inputfile_dir  = inputfile_dir, 
-                           bulk           = bulk, 
-                           supcl          = supcl, 
-                           correction     = correction, 
-                           output         = output, 
-                           check          = check, 
-                           onlyinspect    = onlyinspect, 
-                           )
+        ret_nt = NameTuple(
+            inputfile_dir  = inputfile_dir, 
+            bulk           = bulk, 
+            supcl          = supcl, 
+            correction     = correction, 
+            output         = output, 
+            check          = check, 
+            onlyinspect    = onlyinspect, 
+            )
     
     # scripts
     elif PROG == "mksupcl":

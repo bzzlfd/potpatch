@@ -37,7 +37,7 @@ def gen_charge_correct(supclInfo: MaterialSystemInfo,
 
     AL      = supclInfo.lattice.AL_AU
     n123    = supclInfo.vr.n123
-    charge  = correction.charge
+    charge  = supclInfo.charge
     charge_pos = supclInfo.charge_pos if supclInfo.charge_pos is not None else np.zeros(3)
     epsilon = correction.epsilon
     epsilon = revise_epsilon(epsilon)

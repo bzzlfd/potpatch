@@ -21,9 +21,11 @@ size          = [4, 4, 4]  # size based on bulk
 charge = 1  # (setting NUM_ELECTRON) - (default NUM_ELECTRON)
 epsilon = 12.34
 
+[potpatch.patch]
+size          = [8, 8, 8]
+
 
 [potpatch.output]
-size          = [8, 8, 8]
 basedir       = "./3.escan/2.supercell_08a/" # It's a path relative to this file.
 mkdir         = true
 atomconfig    = "atom.config"
