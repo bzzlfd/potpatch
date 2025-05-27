@@ -1,5 +1,5 @@
 # PotPatch
-This is an implementation of the potentail patching, which is a semiconductor shallow impurity level calculation method, in PWmat. 
+This is an implementation of the potential patching, which is a semiconductor shallow impurity level calculation method, in PWmat. 
 
 
 
