@@ -1,6 +1,6 @@
 import argparse
 import tomllib
-from os.path import dirname, abspath
+from os.path import join, dirname, abspath, isabs
 from os import getcwd
 
 from potpatch.utils import NameTuple
@@ -246,3 +246,37 @@ def file_input_parse(PROG, args):
         assert False, f"Invalid PROG {PROG}"
     
     return PROG, ret_nt
+
+
+# =============================================
+# tools used in __main__.py
+# =============================================
+def acvr_path(inputdir : str, basedir : None | str, ac : str, vr : str):
+    """
+    Returns
+    -------
+    basedir: str
+        abspath of basedir
+    ac: str
+        abspath of atom.config
+    vr: str
+        abspath of *.VR
+
+    Notes:
+    ----------------
+    刻舟求剑
+        `basedir` floats above `inputfile_dir`, 
+        while `vr` and `atom.config` float above `basedir`. 
+        The absolute paths within them are like anchors 
+        that reach straight down to the seabed
+    """
+    if basedir is None:
+        basedir = "."
+
+    basedir = basedir if isabs(basedir) else join(inputdir, basedir)
+
+    ac = ac if isabs(ac) else join(basedir, ac)
+    vr = vr if isabs(vr) else join(basedir, vr)
+
+    basedir, ac, vr = abspath(basedir), abspath(ac), abspath(vr)
+    return basedir, ac, vr

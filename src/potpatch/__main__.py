@@ -21,6 +21,7 @@ from potpatch.shift import shift_oneAtomConfig, shift_twoAtomConfig
 from potpatch.atompos_coin import check_atompos_consistency
 from potpatch.diff_vatom import diff_vatom, write_diffvatom
 from potpatch.parse import cli_arg_parse, file_input_parse
+from potpatch.parse import acvr_path
 from potpatch.utils import revise_epsilon
 from potpatch.utils import log
 
@@ -50,35 +51,29 @@ def potpatch(args):
     supcl_size         = args.supcl.size
     frozen_range       = args.supcl.frozen_range
     
-    basedir = "." if args.bulk.basedir is None else args.bulk.basedir
-    basedir = basedir if isabs(basedir) else join(args.inputfile_dir, basedir)
-    bulk_atomconfig    = join(basedir, args.bulk.atomconfig)
-    bulk_vr            = join(basedir, args.bulk.vr        )
+    _, bulk_atomconfig, bulk_vr = acvr_path(
+        args.inputfile_dir, args.bulk.basedir, 
+        args.bulk.atomconfig, args.bulk.vr)
     bulkInfo    = MaterialSystemInfo(
         atoms_filename=bulk_atomconfig,  vr_filename=bulk_vr, 
-        charge=0, epsilon=epsilon)
+        charge=0, epsilon=epsilon
+    )
     # [
-    basedir = "." if args.supcl.basedir is None else args.supcl.basedir
-    basedir = basedir if isabs(basedir) else join(args.inputfile_dir, basedir)
-    supcl_atomconfig   = join(basedir, args.supcl.atomconfig)
-    supcl_vr           = join(basedir, args.supcl.vr        )
+    _, supcl_atomconfig, supcl_vr = acvr_path(
+        args.inputfile_dir, args.supcl.basedir, 
+        args.supcl.atomconfig, args.supcl.vr
+    )
     charge             = args.supcl.charge
     supclInfo   = MaterialSystemInfo(
         atoms_filename=supcl_atomconfig, vr_filename=supcl_vr, 
         charge=charge, epsilon=epsilon)
     # [
-    basedir = "." if args.output.basedir is None else args.output.basedir
-    basedir = basedir if isabs(basedir) else join(args.inputfile_dir, basedir)
+    basedir, output_atomconfig, output_vr = acvr_path(
+        args.inputfile_dir, args.output.basedir, 
+        args.output.atomconfig, args.output.vr
+    )
     if (ifmkdir := True if args.output.mkdir is not None else False):
         makedirs(basedir, exist_ok=True)
-    output_atomconfig  = args.output.atomconfig \
-        if args.output.atomconfig is not None \
-        else f"atom.config_{bulkInfo.atomconfig.natoms*prod(target_size)}"
-    output_vr          = args.output.vr         \
-        if args.output.vr is not None \
-        else f"IN.VR_{bulkInfo.atomconfig.natoms*prod(target_size)}"
-    output_atomconfig  = join(basedir, output_atomconfig)
-    output_vr          = join(basedir, output_vr        )
     
     supcl_size = inspect_ingredient(  # >log ~0/6~
         supclInfo, bulkInfo, 
