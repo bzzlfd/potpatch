@@ -64,7 +64,7 @@ This tutorial focuses on the usage of the program. If you feel confused while re
 
 ## Contribution
 This code is in Alpha version. 
-Bug reports, more natural usage recommends, unambiguous statements, tests, improvements ... are all welcome. 
+Bug reports, more intuitive usage recommends, unambiguous statements, tests, improvements ... are all welcome. 
 
 > Please feel free to get in touch. -> (zzkai@csrc.ac.cn) 
 > 

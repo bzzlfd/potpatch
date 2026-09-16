@@ -110,14 +110,14 @@ $$
 
 这一步或许可以被理解为在原本 LDA 哈密顿量基础上 *在杂质原子附近原子的某个角动量通道* 加了微扰. 
 
-对于 [UPF 格式](https://pseudopotentials.quantum-espresso.org/home/unified-pseudopotential-format) 赝势文件, 比较经济的改赝势方案是更改 `<PP_DIJ>` 这个按角动量分块的分块对角方阵. 
-尤其是对于 Kleinman-Bylander 形式的赝势, [这么搞一定不会弄出来 ghost state][gonze]. 
+对于 [UPF 格式](https://pseudopotentials.quantum-espresso.org/home/unified-pseudopotential-format) 赝势文件, 比较经济的改赝势方案是更改 `<PP_DIJ>` 这个按角动量分块的分块对角方阵. 尤其是对于 Kleinman-Bylander 形式的赝势, [这么搞一定不会弄出来 ghost state][gonze]. 
 想了解赝势文件中 `<PP_LOCAL>`/`<PP_NONLOCAL>`/`<PP_BETA>`/`<PP_DIJ>` 标签在指代什么变量? 不妨去看看 [Vanderbilt][vanderbilt] 这篇简洁优雅的文章. Quantum Espresso 将超软赝势和模守恒赝势一起处理, 文章中模守恒赝势中的 $B_{ij,l}$ 矩阵兼容地在 UPF 文件中被 $D_{ij,l}$ 矩阵表示. 
 
 需要注意的是, 实际上这四个能量本征值并不是在同一基准上的, 我们需要把离杂质最远的原子位势当做四个体系的基准, 对上面公式的各个能量进行对齐. 
 
 这个例子中有效质量预测结果很好所以没有进行修正, 请做自己的检查. 
 
+todo 经验之谈, 多近算近, Si CBM valley 
 
 [wang]: https://doi.org/10.1063/1.3153981
 [kang]: https://doi.org/10.1103/PhysRevApplied.18.064001
