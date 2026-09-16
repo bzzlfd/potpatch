@@ -253,7 +253,7 @@ def codecontext_has_n(mark: str) -> int:
 
 
 def extract_logmark(mark: str, mark_f):
-    """Extract and process log context from caller's code line using regex 
+    r"""Extract and process log context from caller's code line using regex 
     patterns.
     
     Parameters

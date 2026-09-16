@@ -13,13 +13,13 @@ def potpatch():
     bulk_vr            = "./1.lda/1.bulk/2.scf/OUT.VR"
     bulkInfo    = MaterialSystemInfo()
     bulkInfo.atomconfig.read(filename=bulk_atomconfig)
-    bulkInfo.vr.read(filename=bulk_vr, vr_fmt="Escan")
+    bulkInfo.vr.read(filename=bulk_vr, fmt="Escan")
 
     supcl_atomconfig    = "./1.lda/2.supercell/2.scf/atom.config"
     supcl_vr            = "./1.lda/2.supercell/2.scf/OUT.VR"
     supclInfo   = MaterialSystemInfo(charge=charge, epsilon=epsilon)
     supclInfo.atomconfig.read(filename=supcl_atomconfig)
-    supclInfo.vr.read(filename=supcl_vr, vr_fmt="Escan")
+    supclInfo.vr.read(filename=supcl_vr, fmt="Escan")
 
     output_atomconfig  = "./3.escan/2.supercell_08a/atom.config2"
     output_vr          = "./3.escan/2.supercell_08a/IN.VR2"

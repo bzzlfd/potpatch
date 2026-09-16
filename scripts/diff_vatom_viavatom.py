@@ -20,8 +20,8 @@ def read_vatom(bulk_dir, supcl_dir):
     # read OUT.VATOM
     bulk_vatom = os.path.join(bulk_dir, "OUT.VATOM")
     supcl_vatom = os.path.join(supcl_dir, "OUT.VATOM")
-    bulk_vatom = VATOM().read_vatom(bulk_vatom)
-    supcl_vatom = VATOM().read_vatom(supcl_vatom)
+    bulk_vatom = VATOM().read(bulk_vatom)
+    supcl_vatom = VATOM().read(supcl_vatom)
 
     # 
     order, _, _ = bulk_order_mapto_supcl(bulk_ac, supcl_ac, warn_tol=np.inf)

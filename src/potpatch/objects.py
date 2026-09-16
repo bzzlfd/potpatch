@@ -170,7 +170,7 @@ class VR():
         self.lattice_check_trigger = lattice_check_trigger
 
         if filename is not None:
-            self.read(filename=filename, vr_fmt=vr_fmt)
+            self.read(filename=filename, fmt=vr_fmt)
 
         if lattice  is not None:
             self._latticeflag = f"({self.comment}) (init parameter)"
@@ -201,9 +201,9 @@ class VR():
         # TODO 检查类型, 修改类型
         pass
 
-    def read(self, filename, vr_fmt="PWmat"):
+    def read(self, filename, fmt="PWmat"):
         self.filename = os.path.abspath(filename)
-        self.vr_fmt = vr_fmt
+        self.vr_fmt = fmt
         with open(filename, "br") as io:
             n1, n2, n3, nnodes = read_fortran_binary_block(io, INTEGER_IN)
             assert (n1*n2*n3) % nnodes == 0, "`n1*n2*n3` is not divisible by `nnodes`"
@@ -212,7 +212,7 @@ class VR():
             AL = read_fortran_binary_block(io, REAL_8)
             AL = np.reshape(AL, (3, 3))
             self._latticeflag = f"({self.comment}) read fromfile({self.filename})"
-            self.lattice = Lattice(AL, self.fmt2unit[vr_fmt], 
+            self.lattice = Lattice(AL, self.fmt2unit[fmt], 
                                    fromwhere=self._latticeflag)
 
             self.mesh = np.zeros(n1*n2*n3, dtype=REAL_8)
@@ -377,10 +377,11 @@ class AtomConfig():
             position_list = np.zeros((natoms, 3), dtype=REAL_8)
             move_list = np.zeros((natoms, 3), dtype=INTEGER_IN)
             for i in range(natoms):
-                s = io.readline().split()[0:7]
+                s = io.readline().split()
                 itype_list[i] = INTEGER_IN(s[0])
                 position_list[i] = np.array([REAL_8(i) for i in s[1:4]])
-                move_list[i] = np.array([INTEGER_IN(i) for i in s[4:7]])
+                if fmt == "PWmat":
+                    move_list[i] = np.array([INTEGER_IN(i) for i in s[4:7]])
             self.itypes     = itype_list
             self.positions  = position_list
             self.moves      = move_list
@@ -456,11 +457,11 @@ class VATOM():
     """
     def __init__(self, filename=None, comment: str = "unkown vatom") -> None:
         if filename is not None:
-            self.read_vatom(filename)
+            self.read(filename)
 
         self.comment    = comment
 
-    def read_vatom(self, filename) -> None:
+    def read(self, filename) -> None:
         self.filename = os.path.abspath(filename)
         with open(filename, "r") as io:
             natoms = int(io.readline().split()[0])
@@ -499,6 +500,7 @@ class VATOM():
         """
         self.positions %= 1
 
+
 class EIGEN():
     """
     OUT.EIGEN
@@ -514,14 +516,20 @@ class EIGEN():
     """
     def __init__(self, filename=None, comment: str = "unkown eigen") -> None:
         if filename is not None:
-            self.read_eigen(filename=filename)
+            self.read(filename=filename)
         
         self.comment    = comment
 
-    def read_eigen(self, filename: str) -> None:
+    def read(self, filename: str) -> None:
         self.filename = os.path.abspath(filename)
         with open(filename, "br") as io:
-            self.islda, self.nkpt, self.nband, self.nref_tot_8, self.natom, self.nnodes = read_fortran_binary_block(io, INTEGER_IN)
+            meta = read_fortran_binary_block(io, INTEGER_IN)
+            if len(meta) == 6:
+                self.islda, self.nkpt, self.nband, self.nref_tot_8, self.natom, self.nnodes = meta
+                self.is_SO = 0
+            else:
+                self.islda, self.nkpt, self.nband, self.nref_tot_8, self.natom, self.nnodes, self.is_SO = meta
+
             self.eigenvals   = np.zeros((self.islda, self.nkpt, self.nband), dtype=REAL_8)
             self.kpoints     = np.zeros((self.nkpt, 3),                      dtype=REAL_8)
             self.weighkpt    = np.zeros((self.nkpt),                         dtype=REAL_8)
@@ -575,9 +583,9 @@ class MaterialSystemInfo():
         if vr_filename    is not None:
             self.vr.read(vr_filename, vr_fmt)
         if vatom_filename is not None:
-            self.vatom.read_vatom(vatom_filename)
+            self.vatom.read(vatom_filename)
         if eigen_filename is not None:
-            self.eigen.read_eigen(eigen_filename)
+            self.eigen.read(eigen_filename)
 
         if lattice      is not None:
             self._latticeflag = f"({self.comment}) (init parameter)"

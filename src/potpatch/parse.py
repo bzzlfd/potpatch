@@ -230,6 +230,7 @@ def file_input_parse(PROG, args):
             bulk           = bulk, 
             supcl          = supcl, 
             correction     = correction, 
+            patch          = patch,
             output         = output, 
             check          = check, 
             onlyinspect    = onlyinspect, 

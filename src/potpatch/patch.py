@@ -174,6 +174,9 @@ def patch_atom_v2(supclAtom: AtomConfig, bulkAtom: AtomConfig,
     supclAtom.revise_atomsposition()
     bulkAtom.revise_atomsposition()
 
+    assert len(supcl_size) == 3
+    assert len(target_size) == 3
+
     supclAtom.positions[supclAtom.positions >= 0.5] -= 1.0
     # code prototype from AtomConfig.__mul__
     nrepeat         = np.prod(target_size)

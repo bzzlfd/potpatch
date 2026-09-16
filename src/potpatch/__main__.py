@@ -74,6 +74,8 @@ def potpatch(args):
     )
     if (ifmkdir := True if args.output.mkdir is not None else False):
         makedirs(basedir, exist_ok=True)
+        makedirs(dirname(output_atomconfig), exist_ok=True)  # Warning: output_atomconfig as a reture of `acvr_path` is abs_dir
+        makedirs(dirname(output_vr), exist_ok=True)  # Warning: output_atomconfig as a reture of `acvr_path` is abs_dir
     
     supcl_size = inspect_ingredient(  # >log ~0/6~
         supclInfo, bulkInfo, 
@@ -100,7 +102,7 @@ def potpatch(args):
         # f"    charge_pos: {supclInfo.charge_pos}",
         r"    epsilon:",
         f"{indent(supclInfo.epsilon.__str__(), ' '*(4+9))}",
-        f"    plus_V: {correction.plus_V}"
+        f"    plus_V: {correction.plus_V}",
         r"output:",
         f"    target_size: {target_size}",
         f"    VR({output_vr})",
@@ -116,7 +118,7 @@ def potpatch(args):
     minus_V_periodic(supclInfo)  # >log ~2/6~
     edge_match_correct(supclInfo, bulkInfo)  # >log ~3/6~ 
     if (debg := False):
-        supclInfo.vr.write_vr(filename="supcl.VR.debug")
+        supclInfo.vr.write(filename="supcl.VR.debug")
         
     suuuupclInfo = patch(supclInfo, bulkInfo, supcl_size, target_size)  # >log ~4/6~
     suuuupclInfo.charge, suuuupclInfo.epsilon = charge, epsilon
@@ -190,13 +192,16 @@ def shift(args):
         if supcl is not None:
             ac    = AtomConfig(filename=supcl)
         shift_oneAtomConfig(ac, shift)
-        ac.write(ac.filename + "_shift", comment=comment)
+        filename = join(getcwd(), basename(ac.filename))
+        ac.write(filename + "_shift", comment=comment)
     elif args.count == 2:
         bulk_ac   = AtomConfig(filename=bulk)
         supcl_ac  = AtomConfig(filename=supcl)
         shift_twoAtomConfig(bulk_ac, supcl_ac, shift)
-        bulk_ac.write(bulk_ac.filename + "_shift", comment=comment)
-        supcl_ac.write(supcl_ac.filename + "_shift", comment=comment)
+        filename = join(getcwd(), basename(bulk_ac.filename))
+        bulk_ac.write(filename + "_shift", comment=comment)
+        filename = join(getcwd(), basename(supcl_ac.filename))
+        supcl_ac.write(filename + "_shift", comment=comment)
 
 
 def check_atompos(args):

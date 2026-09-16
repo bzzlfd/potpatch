@@ -1,13 +1,20 @@
-from potpatch import VR
+from potpatch import VR, AtomConfig
 
 
 def main():
-    bulk_vr            = ""
+    input_vr           = ""
     output_vr          = ""
+    input_atom         = ""
+    output_atom        = ""
+    
 
     bulkVR = VR()
-    bulkVR.read(filename=bulk_vr, vr_fmt="PWmat")
+    bulkVR.read(filename=input_vr, fmt="PWmat")
     bulkVR.write(filename=output_vr, fmt="Escan", nnodes=None)
+    
+    bulkVR = AtomConfig()
+    bulkVR.read(filename=input_atom, fmt="PWmat")
+    bulkVR.write(filename=output_atom, fmt="Escan")
     
 
 if __name__ == "__main__":

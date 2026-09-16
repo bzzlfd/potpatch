@@ -12,7 +12,7 @@ def main():
     bulkAC.write(filename=output_ac, fmt="Escan")
 
     bulkVR = VR()
-    bulkVR.read(filename=bulk_vr, vr_fmt="PWmat")
+    bulkVR.read(filename=bulk_vr, fmt="PWmat")
     bulkVR.write(filename=output_vr, fmt="Escan", nnodes=None)
     
 
