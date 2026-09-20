@@ -11,6 +11,7 @@ from potpatch import (AtomConfig, VR, MaterialSystemInfo,
                       edge_match_correct, patch, 
                       diff_vatom, write_diffvatom,
                       BOHR, INTEGER)
+from potpatch.supercell import infer_supercell_size
 
 
 # a copy from __main__.potpatch
@@ -113,17 +114,11 @@ patch is compatible for alloy bulk case:
 
 
 def inspect_ingredient(supclInfo, bulkInfo, frozen_confirm=None, size_confirm=None):
-    # supcl size inference
-    supcl_vrsize = supclInfo.vr.n123 / bulkInfo.vr.n123 
-    # Lattice and VR.n123: ?same
-    lattice_mulmag = bulkInfo.lattice * supcl_vrsize
-    if not supclInfo.lattice == lattice_mulmag:
-        raise warnings.warn(dedent(f"""
-                magnifacation between Lattice and VR_mesh is not equal
-                supclInfo.lattice({supclInfo.lattice.in_unit("angstrom")})
-                bulkInfo.lattice * mag({lattice_mulmag.in_unit("angstrom")})
-                """))
-    supcl_size = array(supcl_vrsize, dtype=float)
+    # Alloy patching permits fractional magnifications, so retain the floating
+    # lattice ratio returned by the common inference helper.
+    _, supcl_size = infer_supercell_size(
+        bulkInfo.lattice, supclInfo.lattice)
+    supcl_size = array(supcl_size, dtype=float)
 
     if supclInfo.charge is None:
         warnings.warn("information of supercell `charge` is not given")

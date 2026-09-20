@@ -5,7 +5,8 @@ import numpy as np
 from numba import jit, guvectorize
 
 from potpatch.objects import Lattice, VR, AtomConfig, MaterialSystemInfo
-from potpatch.supercell import make_supercell, modify_supercell, closed_to_edge
+from potpatch.supercell import (make_supercell, modify_supercell, closed_to_edge,
+                                infer_supercell_size)
 from potpatch.atompos_coin import check_atompos_consistency
 from potpatch.utils import timing, log
 from potpatch.datatype import REAL_8, INTEGER
@@ -18,7 +19,8 @@ def inspect_ingredient(supclInfo: MaterialSystemInfo,
     log(f"{inspect_ingredient.__name__}")
     """
     size_confirm: optional parameter `potpatch.supercell.size` in "potpatch.input"
-                the `supercell_size` information is infered from `atom.config` and `VR` files, so
+                the `supercell_size` information is inferred from the bulk and
+                supercell lattices, so
                 it is not necessary to pass the `supercell_size` to `patch`
                 this parameter was designed to confirm `supercell_size` as user expect
     frozen_confirm: optional parameter `potpatch.supercell.frozen_range` in "potpatch.input"
@@ -32,30 +34,34 @@ def inspect_ingredient(supclInfo: MaterialSystemInfo,
     for info in (bulkInfo, supclInfo):
         info.validate(required_paths=required).raise_for_errors()
 
-    # supcl size inference
-    log("infer supercell size from VR.n123")  # >log
-    supcl_vrsize = supclInfo.vr.n123 / bulkInfo.vr.n123 
-    # supcl size ?integer mag
-    if not all(np.abs(supcl_vrsize - np.round(supcl_vrsize, 0)) < 1e-6):
+    # Infer the physical supercell magnification from the lattices, then
+    # check the VR mesh ratio required by patch_vr().
+    log("infer supercell size from lattice")  # >log
+    supcl_size, supcl_lattice_size = infer_supercell_size(
+        bulkInfo.lattice, supclInfo.lattice)
+    if not all(np.abs(supcl_lattice_size - supcl_size) < 1e-6):
         raise ValueError(
-            "magnifacation between the two VR is not integer\n"
-            # indent(f"{supclInfo.lattice.in_unit('angstrom').__str__()}", " "*8),
-            f"    {supclInfo.vr.n123=}\n"
-            f"    {bulkInfo.vr.n123=}\n"
-            )
-    # Lattice and VR.n123: ?same
-    log("check if the size inference above matches the lattice size.")  # >log
-    lattice_mulmag = bulkInfo.lattice * supcl_vrsize
-    if not supclInfo.lattice == lattice_mulmag:
-        raise ValueError(
-            "Magnification between Lattice and VR_mesh is not equal\n"
+            "magnification between the bulk and supercell lattices is not integer\n"
+            "bulkInfo.lattice:\n"
+            f"{np.array2string(bulkInfo.lattice.in_unit('angstrom'), prefix='    ')}\n"
             "supclInfo.lattice:\n"
-            f"{np.array2str(supclInfo.lattice.in_unit('angstrom'), prefix='    ')}\n"
-            "bulkInfo.lattice * mag:\n"
-            f"{np.array2str(lattice_mulmag.in_unit('angstrom'), prefix='    ')}"
-        )
+            f"{np.array2string(supclInfo.lattice.in_unit('angstrom'), prefix='    ')}\n"
+            f"magnification: {supcl_lattice_size}"
+            )
 
-    supcl_size = INTEGER(supcl_vrsize)
+    # patch_vr() copies values directly between the two meshes.  This is only
+    # valid when their real-space grid spacings agree, so N123 must scale by
+    # the lattice-derived magnification.  It is a compatibility check, not
+    # the source of supcl_size.
+    supcl_mesh_size = supclInfo.vr.n123 / bulkInfo.vr.n123
+    if not all(np.abs(supcl_mesh_size - supcl_size) < 1e-6):
+        raise ValueError(
+            "VR mesh magnification does not match lattice magnification\n"
+            f"lattice magnification: {supcl_size}\n"
+            f"supclInfo.vr.n123: {supclInfo.vr.n123}\n"
+            f"bulkInfo.vr.n123: {bulkInfo.vr.n123}\n"
+            f"VR mesh magnification: {supcl_mesh_size}"
+        )
 
     if not all(bulkInfo.vr.n123 % 2 == 0) or \
        not all(supclInfo.vr.n123 % 2 == 0):
@@ -68,7 +74,6 @@ def inspect_ingredient(supclInfo: MaterialSystemInfo,
             It's recommended that forcibly set `N123` to the even numver.
             """))
 
-    log("infer supercell size from VR.n123")  # >log
     if supclInfo.charge_pos is None:
         supclInfo.charge_pos = np.array([0., 0., 0.])
     else:
