@@ -15,6 +15,12 @@ Start with `pyproject.toml` to find the package configuration, dependencies, and
 
 Use Python 3.11 or newer because the parser imports the standard-library `tomllib` module.
 
+## Worktree Workflow
+
+Before modifying code, work on a task-specific branch in a dedicated worktree so `HEAD` does not point to `main`, `dev`, or another active shared branch. If the current worktree already belongs to this task and uses a task-specific branch, continue there. Otherwise, create a worktree under `.tree/<task-name>/` in the primary working tree and make the code changes there.
+
+When the task is complete and its commits have been integrated or otherwise safely retained, clean up its worktree and branch if they are no longer needed. Check for uncommitted changes before removing the worktree. Creating or removing a worktree and deleting a branch are Git mutations subject to the explicit confirmation requirement below; do not perform them automatically.
+
 ## Coding Style & Naming Conventions
 
 Use four-space indentation and broadly follow PEP 8. Use `snake_case` for modules and functions, `CapWords` for classes, and `UPPER_CASE` for constants. Preserve PWmat terms such as `VR`, `VATOM`, and `AtomConfig`. Type new public APIs and state numerical units in names or docstrings. No formatter or linter is configured; avoid formatting churn.
@@ -46,6 +52,8 @@ While the project remains below `1.0.0`, increment `MINOR` for a backward-incomp
 ## Commit & Pull Request Guidelines
 
 Never run `git add`, `git commit`, `git push`, `git reset`, `git rebase`, or another Git mutation without explicit user confirmation. Ask before each mutation; earlier permission does not carry forward.
+
+Before merging a task branch, fetch the latest state of the target branch and attempt to rebase the task branch onto the target commit that will receive the merge. Resolve any conflicts and rerun relevant checks before merging. If others use the task branch, coordinate before rewriting its history; if rebasing is unsuitable, explain why and agree on another integration approach. The Git mutation confirmation rule above applies to these steps.
 
 Use Conventional Commits for the header:
 
