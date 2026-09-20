@@ -11,7 +11,7 @@
 1. [为什么我安装之后会有一个 `potpatch` 命令, 它是如何工作的](#入口文件)
 2. [实现 potentail patch 的关键代码在哪里?](#potential-patching-的关键)
 3. [代码结构是什么样, 我开发时应该注意什么](#代码结构)
-4. [`OUT.VR`, `atom.config` 中都有 `Lattice` 变量, 如何在 `MaterialSystemInfo` 中保持一致性](#objects)
+4. [`OUT.VR`, `atom.config` 中都有 `Lattice` 变量, 如何在 `MaterialSystemInfo` 中检查一致性](#objects)
 
 
 
@@ -29,33 +29,24 @@
 ### objects
 `objects.py` 中定义了很多class, 它们中的大多数都和某个 PWmat 文件一一对应, 当使用其中的 `read` method 时, 更是尽力还原原著
 除此之外, 
-`MaterialSystemInfo` 是这些文件对象的统一集合;  
-还有一些很多文件共有的部分被单独抽象出来, 同时在各个地方加入了额外的代码以确保一致性, 比如 Lattice 在 atom.config 和 OUT.VR 文件中都存在, 于是
-- 在 `MaterialSystemInfo` 中有一个 check_and_modify 函数, 它被植入这个 `MaterialSystemInfo` 下的 `AtomConfig` 和 `VR` 当中
-- `MaterialSystemInfo` 当中的 `__setattr__` 被overwrited, 当set atomconfig/vr attr 时会向这个对象当中植入 check_and_modify; 
-- `AtomConfig` 和 `VR` 当中的 `__setattr__` 被重写, 任何尝试设置 AtomConfig 和 VR 当中的 `Lattice` 的动作都会触发 check_and_modify(如果存在) 并进行检查与更新
-- `MaterialSystemInfo` 当中的 `__setattr__` 被重写, 尝试 set lattice attr 的行为会更新这个对象中 atomconfig/vr 的 lattice
-- `Lattice` 当中有个 `fromwhere` 变量用于存储这个变量从何而来, 比如一个 `Lattice` 是从 `VR` 文件中读入, 在触发 trigger 时被设置在 `MaterialSystemInfo` 上时, `VR` 中的 `Lattice` 会记录它是从某个文件读入的, 而 `MaterialSystemInfo` 中的 `Lattice` 会记录它是 `VR` 从某文件读入, 又触发 trigger 设置在 `MaterialSystemInfo` 之上
+`MaterialSystemInfo` 是这些数据对象的集合。`VR` 和 `AtomConfig` 可以逐步构造，未提供的属性可以保持为 `None`。重复的数据由显式调用的 `MaterialSystemInfo.validate()` 检查；检查不修改对象。晶格来源仍记录在 `Lattice.fromwhere` 中。
 
-`MaterialSystemInfo` 会把它的 lattice trigger 遇到的第一个 lattice 信息记录到自己的 lattice 属性中, 之后所有都会来与这个 lattice 对比. 
-如果改变 `MaterialSystemInfo` 中的 lattice, 会自动改变它内部 `VR` 和 `AtomConfig` 的lattice
-所以在 `MaterialSystemInfo` 不能同时传入 filename 和 关键属性. 
-这时候应该自下而上地创建每个对象. 
+**0.2.0 不兼容变更：**移除了 `lattice_check_trigger` 参数和 `__setattr__` 晶格联动。给 `info.lattice`、`info.vr.lattice` 或 `info.atomconfig.lattice` 赋值，只修改指定位置。需要确认一致性时主动调用 `info.validate()`；计算和写出入口也会执行相应检查。详细用法见 [数据检查](./data_validation.md)。
 
 
 #### `Lattice`
 这是一个有单位的二维数组, 
 `AL` 存储三个三维矢量 (each row is a vector, 即期望三个向量分别在内存中是连续的); 
 `unit` 用于存储单位: 它的值只允许是 `registered_units` 中的值, 相应的 `au_transformer` 记录若干浮点数, 用以进行单位转换, 可以通过 `self.in_unit()` 输出对应单位下的 `AL` 数组.
-`fromwhere` 是一个列表, 每当它被从一个包含`lattice`属性的对象传入另一个包含`lattice`属性的对象时, 它就会在对Lattice进行 *复制* , 并把新对象的注释append到fromwhere中.
+`fromwhere` 是记录晶格来源的列表。从文件读取的晶格会记录文件路径；调用 `Lattice.copy(appendwhere=...)` 时可以补充来源。
 为了方便, 它定义了equal, 除法和乘法. equal用以检查两个Lattice是否相等. 乘法和除法是与supercell相关的概念, bulk Lattice乘以一个包含三个整数的Sequence返回一个新的supercell Lattice, supercell Lattice除以一个bulk Lattice返回一个包含三个整数的Sequence. 
-请把它当做最小单元使用, 不要手动修改它实例的属性, 如果你想改变其中的某些属性, 请创建一个新的 `Lattice` 实例
+`Lattice` 可以修改；如果它已经放入一个 `MaterialSystemInfo`，修改完成后应重新调用 `validate()`，因为之前的报告只代表检查当时的数据。
 
 #### `VR`
 OUT.VR 文件是一个二进制文件, 它的文件格式从 `convert_rho.f90` 推断出来. 其中AL的单位是angstrom. 在没集成进PWmat中的Escan版本里, AL是原子单位.
 VR有一个 `vr_fmt` 参数, 它默认是 `PWmat`, 如果不是这个字符串不是严格的`PWmat`时会在读取/写入过程中使用旧版Escan的文件格式(这个代码设计是不是不合理)
 
-它的关键属性是 `lattice` 和 `mesh`, mesh第三个索引是变化最快的索引; `AL_check_trigger` 存储 `MaterialSystemInfo` 为了检查 `Lattice` 一致性而植入的trigger; `comment` 是对这个对象的特别注释, 可以帮忙区分它是谁; `n123` 可以从 `mesh` 推断出来, 是衍生量, 用 `@property` 可以确保不出错, 但是这样也不能设置这个参数了; 如果是从文件中读入, 它还会记录 `filename` 和 `nndoes`.
+它的关键属性是 `lattice` 和 `mesh`, mesh第三个索引是变化最快的索引; `comment` 是对这个对象的特别注释, 可以帮忙区分它是谁; `n123` 可以从 `mesh` 推断出来, 是衍生量, 用 `@property` 可以确保不出错, 但是这样也不能设置这个参数了; 如果是从文件中读入, 它还会记录 `filename` 和 `nnodes`.
 
 VR被设计成多种用法
 在 `__init__` 初始化中, 它可以不传入参数, 传入filename, 传入各个属性, 当同时指定filename和关键属性(如`VR(filename=filename, mesh=mesh)`)时, 会先读取filename当中的nnodes, AL, lattice和mesh, 再(在上面例子中)用传入的mesh覆盖从filename中读取的mesh.
@@ -93,8 +84,7 @@ OUT.EIGEN 是一个二进制文件
 #### `MaterialSystemInfo`
 它是对上面所有的对象的集合, 此外还有一些 charge, epsilon 等信息
 
-它的用法设计沿袭了 `VR`, `AtomConfig`
-但是如果在初始化时同时指定了 ①一个它自身含有 lattice 信息的对象 (如`VR`), ②一个该对象的文件名, 它不一定会按照我们所期望的"覆盖"行为工作, 因为可能会遇到lattice冲突. 
+若显式设置 `info.lattice`，它是独立的参考晶格；否则读取 `info.lattice` 时优先返回 `atomconfig.lattice`，其次返回 `vr.lattice`。这个读取便利性不会复制或同步晶格。调用 `validate()` 会比较所有已存在的来源，报告通过、失败或证据不足的项目。
 
 
 
@@ -174,8 +164,6 @@ $$
 `constant.py` 存放了一些常数
 `utils.py` 存放的是一些杂七杂八的工具, 包含读写Fortran二进制文件的函数实现
 `errors.py` 现在很多错误检查在滥用 assert, 但其中一些检查的语义应该用 raise, 这个文件是放置 raise error 的(鸽了)
-
-
 
 
 

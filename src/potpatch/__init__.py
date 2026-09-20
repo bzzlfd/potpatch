@@ -7,6 +7,7 @@ from potpatch.datatype import (INTEGER, INTEGER_4, INTEGER_8,
 from potpatch.objects import (MaterialSystemInfo, 
                               VR, AtomConfig, VATOM, EIGEN, 
                               Lattice)
+from potpatch.validation import CheckResult, ValidationReport
 from potpatch.correction import gen_charge_correct, edge_match_correct
 from potpatch.patch import (patch, 
                             patch_atom, patch_atom_v2, patch_vr, 

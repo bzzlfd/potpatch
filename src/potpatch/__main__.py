@@ -24,6 +24,7 @@ from potpatch.parse import cli_arg_parse, file_input_parse
 from potpatch.parse import acvr_path
 from potpatch.utils import revise_epsilon
 from potpatch.utils import log
+from potpatch.validation import PATCH_REQUIRED_FIELDS
 
 
 def main():
@@ -113,6 +114,10 @@ def potpatch(args):
     log("==> summary end <==\n",)  # >log
     if args.onlyinspect:
         return
+
+    bulkInfo.validate(required_paths=PATCH_REQUIRED_FIELDS).raise_for_errors()
+    supclInfo.validate(required_paths=(*PATCH_REQUIRED_FIELDS,
+                                      "charge", "epsilon")).raise_for_errors()
     
     minus_V_periodic, plus_V_single = gen_charge_correct(supclInfo, correction)  # >log ~1/6~
     minus_V_periodic(supclInfo)  # >log ~2/6~
@@ -123,6 +128,8 @@ def potpatch(args):
     suuuupclInfo = patch(supclInfo, bulkInfo, supcl_size, target_size)  # >log ~4/6~
     suuuupclInfo.charge, suuuupclInfo.epsilon = charge, epsilon
     plus_V_single(suuuupclInfo)  # >log ~5/6~
+
+    suuuupclInfo.validate(required_paths=PATCH_REQUIRED_FIELDS).raise_for_errors()
 
     log("write atomconfig file")  # >log ~6/6~
     suuuupclInfo.atomconfig.write(filename=output_atomconfig)

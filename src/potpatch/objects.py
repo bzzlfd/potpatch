@@ -2,6 +2,8 @@ import os
 from copy import deepcopy, copy
 import warnings
 from math import ceil
+from collections.abc import Iterable
+from typing import TYPE_CHECKING
 
 import numpy as np
 
@@ -10,6 +12,9 @@ from potpatch.utils import (read_fortran_binary_block,
                             write_fortran_binary_block)
 from potpatch.constant import BOHR, HA, EPSILON0
 from potpatch.datatype import INTEGER, INTEGER_IN, INTEGER_OUT, REAL_8
+
+if TYPE_CHECKING:
+    from potpatch.validation import ValidationReport
 
 
 """
@@ -105,7 +110,7 @@ class Lattice():
     def __imul__(self, magnification):
         lattice = self.__mul__(magnification)
         self.AL = lattice.AL
-        self.AL_AU = lattice.AL_AU
+        self.fromwhere = lattice.fromwhere
         return self
 
     def __truediv__(self, lattice: 'Lattice') -> np.ndarray[int]:
@@ -159,37 +164,21 @@ class VR():
     
     def __init__(self, filename=None, 
                  lattice: Lattice = None, mesh=None, 
-                 vr_fmt="PWmat", lattice_check_trigger=None,
+                 vr_fmt="PWmat",
                  comment: str = "vr"):
         # TODO 如果给传了 filename, ①检查(/提示) vr_fmt ②read
-        self._latticeflag   = None
         self.lattice        = None
         self.mesh           = None
         self.comment = comment
         self.vr_fmt = vr_fmt
-        self.lattice_check_trigger = lattice_check_trigger
 
         if filename is not None:
             self.read(filename=filename, fmt=vr_fmt)
 
         if lattice  is not None:
-            self._latticeflag = f"({self.comment}) (init parameter)"
-            self.lattice: Lattice = lattice
+            self.lattice: Lattice = lattice.copy(f"({self.comment}) init parameter")
         if mesh     is not None: 
             self.mesh: np.ndarray = mesh
-
-    def __setattr__(self, name: str, value) -> None:
-        if (name == "lattice") and (value is not None):
-            assert type(value) is Lattice, "type of self.lattice is not Lattice"
-            lattice: Lattice = value
-            if self.lattice_check_trigger is not None:
-                self.lattice_check_trigger(lattice)
-            if self._latticeflag is not None:
-                self.__dict__[name] = lattice.copy(self._latticeflag)
-            else:
-                self.__dict__[name] = lattice.copy(f"({self.comment}) (via setattr)")
-        else:
-            self.__dict__[name] = value
 
     @property
     def n123(self):
@@ -211,9 +200,9 @@ class VR():
 
             AL = read_fortran_binary_block(io, REAL_8)
             AL = np.reshape(AL, (3, 3))
-            self._latticeflag = f"({self.comment}) read fromfile({self.filename})"
+            lattice_source = f"({self.comment}) read fromfile({self.filename})"
             self.lattice = Lattice(AL, self.fmt2unit[fmt], 
-                                   fromwhere=self._latticeflag)
+                                   fromwhere=lattice_source)
 
             self.mesh = np.zeros(n1*n2*n3, dtype=REAL_8)
             nr = n1*n2*n3//nnodes
@@ -228,6 +217,9 @@ class VR():
         """
         nnodes will be converted into `INTEGER` when writing into file
         """
+        MaterialSystemInfo(vr=self).validate(
+            required_paths=("vr.lattice", "vr.mesh")
+        ).raise_for_errors()
         if nnodes is None:
             nnodes = ceil(self.mesh.size / (128*1024*1024))
             if nnodes < 1:
@@ -300,9 +292,8 @@ class AtomConfig():
     
     def __init__(self, filename=None, natoms=None, lattice: Lattice | None = None,
                  itypes=None, positions=None, moves=None, 
-                 atoms_fmt="PWmat", lattice_check_trigger=None, 
+                 atoms_fmt="PWmat",
                  comment: str = "atomconfig") -> None:
-        self._latticeflag   = None
         self.lattice        = None
         self.natoms         = None
         self.itypes         = None
@@ -310,7 +301,6 @@ class AtomConfig():
         self.moves          = None
 
         self.comment = comment
-        self.lattice_check_trigger = lattice_check_trigger
         self.atoms_fmt = atoms_fmt
 
         if filename is not None:
@@ -318,25 +308,11 @@ class AtomConfig():
 
         # TODO 像 VR 一样注释类型
         if lattice        is not None: 
-            self._latticeflag = f"({self.comment}) (init parameter)"
-            self.lattice: Lattice = lattice 
+            self.lattice: Lattice = lattice.copy(f"({self.comment}) init parameter")
         if natoms         is not None: self.natoms         = natoms        
         if itypes         is not None: self.itypes         = itypes   
         if positions      is not None: self.positions      = positions
         if moves          is not None: self.moves          = moves    
-
-    def __setattr__(self, name: str, value) -> None:
-        if (name == "lattice") and (value is not None):
-            assert type(value) is Lattice, "type of self.lattice is not Lattice"
-            lattice: Lattice = value
-            if self.lattice_check_trigger is not None:
-                self.lattice_check_trigger(lattice)
-            if self._latticeflag is not None:
-                self.__dict__[name] = lattice.copy(self._latticeflag)
-            else:
-                self.__dict__[name] = lattice.copy(f"({self.comment}) (via setattr)")
-        else:
-            self.__dict__[name] = value
 
     def revise_atomsposition(self):
         """
@@ -367,9 +343,9 @@ class AtomConfig():
             AL = np.zeros((3, 3))
             for i in range(3):
                 AL[i] = np.array([REAL_8(i) for i in io.readline().split()[0:3]])
-            self._latticeflag = f"({self.comment}) read fromfile({self.filename})"
+            lattice_source = f"({self.comment}) read fromfile({self.filename})"
             self.lattice = Lattice(AL, self.fmt2unit[fmt], 
-                                   fromwhere=self._latticeflag)
+                                   fromwhere=lattice_source)
 
             if fmt == "PWmat": 
                 io.readline()
@@ -389,6 +365,15 @@ class AtomConfig():
         return self
 
     def write(self, filename: str, comment: str | None = None, fmt: str = "PWmat"):
+        required = (
+            "atomconfig.lattice", "atomconfig.natoms", "atomconfig.itypes",
+            "atomconfig.positions",
+        )
+        if fmt == "PWmat":
+            required += ("atomconfig.moves",)
+        MaterialSystemInfo(atomconfig=self).validate(
+            required_paths=required
+        ).raise_for_errors()
         with open(filename, "w") as io:
             if comment is not None:
                 comment = comment.replace("\n", " ")
@@ -548,7 +533,11 @@ class EIGEN():
 
 class MaterialSystemInfo():
     """
-    TODO __repr__, verbose
+    Group data belonging to one material system.
+
+    ``lattice`` is an optional explicit reference. Without one, it resolves to
+    the atom configuration lattice, then the VR lattice. Assigning a lattice
+    never changes either child object. Call ``validate`` to compare sources.
     """
     def __init__(self, 
                  lattice: Lattice = None, 
@@ -559,24 +548,24 @@ class MaterialSystemInfo():
                  charge=None, charge_pos=None, epsilon=None, 
                  comment: str = "unkown MaterialSystemInfoSummary") -> None:
         """
-        self.lattice can take the data from vr/atomconfig modified by the `lattice_check_trigger=check_modify_lattice`
         self.charge is the periodic charge in unit cell. `-1` means 1 electron
         """
         if np.all(charge_pos):
             assert np.shape(charge_pos) == np.zeros(3).shape
 
-        self._latticeflag = None
-        self.lattice    = None
+        self._lattice   = lattice.copy(f"({comment}) init parameter") \
+            if lattice is not None else None
+        self.last_validation = None
         self.comment    = comment
 
         self.charge     = charge
         self.charge_pos = charge_pos
         self.epsilon    = epsilon
 
-        self.vr         = VR(lattice_check_trigger=self.check_modify_lattice)
-        self.atomconfig = AtomConfig(lattice_check_trigger=self.check_modify_lattice)
-        self.vatom      = VATOM()
-        self.eigen      = EIGEN()
+        self.vr         = vr if vr is not None else VR()
+        self.atomconfig = atomconfig if atomconfig is not None else AtomConfig()
+        self.vatom      = vatom if vatom is not None else VATOM()
+        self.eigen      = eigen if eigen is not None else EIGEN()
         
         if atoms_filename is not None:
             self.atomconfig.read(atoms_filename, atoms_fmt)
@@ -587,52 +576,25 @@ class MaterialSystemInfo():
         if eigen_filename is not None:
             self.eigen.read(eigen_filename)
 
-        if lattice      is not None:
-            self._latticeflag = f"({self.comment}) (init parameter)"
-            self.lattice: Lattice = lattice 
-        if atomconfig   is not None: self.atomconfig    = atomconfig
-        if vr           is not None: self.vr            = vr
-        if vatom        is not None: self.vatom         = vatom
-        if eigen        is not None: self.eigen         = eigen
+    @property
+    def lattice(self) -> Lattice | None:
+        if self._lattice is not None:
+            return self._lattice
+        if self.atomconfig is not None and self.atomconfig.lattice is not None:
+            return self.atomconfig.lattice
+        if self.vr is not None:
+            return self.vr.lattice
+        return None
 
-    def __setattr__(self, name: str, value) -> None:
-        if name in ["vr", "atomconfig"]:
-            self.__dict__[name] = value
-            getattr(self, name).lattice_check_trigger = self.check_modify_lattice
-            getattr(self, name).lattice_check_trigger(getattr(self, name).lattice)
-        elif (name == "lattice") and (value is not None):
-            assert type(value) is Lattice, "type of self.lattice is not Lattice"
-            if (verbose := False):
-                print(f"setting lattice({value.fromwhere}) in MaterialSystemInfo")
-            lattice: Lattice = value
-            if self._latticeflag is not None:
-                _latticeflag = self._latticeflag
-            else:
-                _latticeflag = f"({self.comment}) (via setattr)"
-            self.__dict__["lattice"]            = lattice.copy(_latticeflag)
-            self.atomconfig.__dict__["lattice"] = self.lattice.copy(f"({self.atomconfig.comment}) (via setattr)")
-            self.vr.__dict__["lattice"]         = self.lattice.copy(f"({self.vr.comment}) (via setattr)")
-        else:
-            self.__dict__[name] = value
+    @lattice.setter
+    def lattice(self, value: Lattice | None) -> None:
+        self._lattice = value.copy(f"({self.comment}) explicit reference") \
+            if value is not None else None
 
-    def check_modify_lattice(self, lattice: Lattice):
-        if lattice is None:
-            return 
-        
-        if self.lattice is None:
-            self._latticeflag = f"({self.comment}) (via lattice_trigger)"
-            self.lattice = lattice
-        else:
-            if not self.lattice == lattice: 
-                s1 = " -> ".join(str(i) for i in self.lattice.fromwhere)
-                s2 = " -> ".join(str(i) for i in lattice.fromwhere)
-                print(
-                    "lattice vector conflict with existing AL",
-                    "old AL (angstrom): ",
-                    f"{s1}",
-                    f"{self.lattice.in_unit('angstrom')}",
-                    "new AL (angstrom):",
-                    f"{s2}",
-                    f"{lattice.in_unit('angstrom')}",
-                    sep="\n"
-                )
+    def validate(self, required_paths: Iterable[str] = ()) -> 'ValidationReport':
+        """Check current data without modifying it; save a historical report."""
+        from potpatch.validation import validate_material_system
+
+        report = validate_material_system(self, required_paths=required_paths)
+        self.last_validation = report
+        return report

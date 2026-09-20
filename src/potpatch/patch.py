@@ -9,6 +9,7 @@ from potpatch.supercell import make_supercell, modify_supercell, closed_to_edge
 from potpatch.atompos_coin import check_atompos_consistency
 from potpatch.utils import timing, log
 from potpatch.datatype import REAL_8, INTEGER
+from potpatch.validation import PATCH_REQUIRED_FIELDS
 
 
 def inspect_ingredient(supclInfo: MaterialSystemInfo,
@@ -24,6 +25,12 @@ def inspect_ingredient(supclInfo: MaterialSystemInfo,
                 when open it, this function will check whether the atom positions in frozen range 
                 are coincide of bulk and supercell
     """
+
+    required = ("lattice", "atomconfig.lattice", "vr.lattice", "vr.mesh")
+    if frozen_confirm is not None:
+        required += ("atomconfig.natoms", "atomconfig.positions")
+    for info in (bulkInfo, supclInfo):
+        info.validate(required_paths=required).raise_for_errors()
 
     # supcl size inference
     log("infer supercell size from VR.n123")  # >log
@@ -102,6 +109,8 @@ def inspect_ingredient(supclInfo: MaterialSystemInfo,
 def patch(supclInfo: MaterialSystemInfo, bulkInfo: MaterialSystemInfo,
           supcl_size, target_size) -> MaterialSystemInfo:
     log(f"{patch.__name__}")
+    for info in (bulkInfo, supclInfo):
+        info.validate(required_paths=PATCH_REQUIRED_FIELDS).raise_for_errors()
     suuuupclInfo = MaterialSystemInfo()
     suuuupclInfo.charge     = supclInfo.charge
     suuuupclInfo.charge_pos = supclInfo.charge_pos
