@@ -13,6 +13,42 @@ from potpatch.datatype import REAL_8, INTEGER
 from potpatch.validation import PATCH_REQUIRED_FIELDS
 
 
+def _resample_periodic_mesh(mesh: np.ndarray,
+                            shape: tuple[int, int, int]) -> np.ndarray:
+    """Fourier-resample a real periodic mesh onto ``shape`` grid points.
+
+    Samples remain registered at fractional coordinate zero on every axis.
+    The zero-frequency coefficient, and hence the mean potential, is kept.
+    """
+    result = mesh
+    for axis, target in enumerate(shape):
+        source = result.shape[axis]
+        if source == target:
+            continue
+
+        spectrum = np.fft.rfft(result, axis=axis)
+        new_shape = list(spectrum.shape)
+        new_shape[axis] = target // 2 + 1
+        resized = np.zeros(new_shape, dtype=spectrum.dtype)
+        common = min(source, target) // 2 + 1
+        sl = [slice(None)] * mesh.ndim
+        sl[axis] = slice(0, common)
+        resized[tuple(sl)] = spectrum[tuple(sl)]
+
+        # An even grid stores its Nyquist pair in one real coefficient.
+        # Split that pair when enlarging and combine it when shrinking.
+        nyquist = [slice(None)] * mesh.ndim
+        if source % 2 == 0 and target > source:
+            nyquist[axis] = source // 2
+            resized[tuple(nyquist)] *= 0.5
+        elif target % 2 == 0 and source > target:
+            nyquist[axis] = target // 2
+            resized[tuple(nyquist)] = 2 * resized[tuple(nyquist)].real
+
+        result = np.fft.irfft(resized, n=target, axis=axis) * target / source
+    return result
+
+
 def inspect_ingredient(supclInfo: MaterialSystemInfo,
                        bulkInfo: MaterialSystemInfo,
                        size_confirm=None, frozen_confirm=None):
@@ -49,19 +85,26 @@ def inspect_ingredient(supclInfo: MaterialSystemInfo,
             f"magnification: {supcl_lattice_size}"
             )
 
-    # patch_vr() copies values directly between the two meshes.  This is only
-    # valid when their real-space grid spacings agree, so N123 must scale by
-    # the lattice-derived magnification.  It is a compatibility check, not
-    # the source of supcl_size.
-    supcl_mesh_size = supclInfo.vr.n123 / bulkInfo.vr.n123
-    if not all(np.abs(supcl_mesh_size - supcl_size) < 1e-6):
-        raise ValueError(
-            "VR mesh magnification does not match lattice magnification\n"
-            f"lattice magnification: {supcl_size}\n"
-            f"supclInfo.vr.n123: {supclInfo.vr.n123}\n"
-            f"bulkInfo.vr.n123: {bulkInfo.vr.n123}\n"
-            f"VR mesh magnification: {supcl_mesh_size}"
+    # Keep the bulk grid as the output resolution.  Align a slightly different
+    # supercell grid before charge correction, boundary matching, and patching.
+    expected_n123 = bulkInfo.vr.n123 * supcl_size
+    actual_n123 = supclInfo.vr.n123
+    spacing_error = np.abs(expected_n123 / actual_n123 - 1)
+    if np.any(spacing_error > 0.05):
+        message = (
+            "VR grid spacing mismatch exceeds 5% on an axis; cannot safely patch: "
+            f"bulk N123={bulkInfo.vr.n123}, lattice size={supcl_size}, "
+            f"expected supercell N123={expected_n123}, "
+            f"actual supercell N123={actual_n123}, "
+            f"spacing difference={np.round(spacing_error * 100, 2)}%"
         )
+        warnings.warn(message, stacklevel=2)
+        raise ValueError(message)
+    if np.any(actual_n123 != expected_n123):
+        log(f"resample supercell VR from N123={actual_n123} "
+            f"to N123={expected_n123}")
+        supclInfo.vr.mesh = _resample_periodic_mesh(
+            supclInfo.vr.mesh, tuple(int(n) for n in expected_n123))
 
     if not all(bulkInfo.vr.n123 % 2 == 0) or \
        not all(supclInfo.vr.n123 % 2 == 0):
@@ -244,6 +287,17 @@ def patch_atom_v2(supclAtom: AtomConfig, bulkAtom: AtomConfig,
 @timing()
 def patch_vr(supclVR: VR, bulkVR: VR, supcl_size, target_size) -> VR:
     log(f"{patch_vr.__name__}")
+    # The alloy example uses fractional size and intentionally overwrites a
+    # smaller physical cell; the grid-spacing requirement applies to ordinary
+    # integer supercells only.
+    if np.all(np.asarray(supcl_size) == np.round(supcl_size)):
+        expected_n123 = bulkVR.n123 * supcl_size
+        if not np.array_equal(supclVR.n123, expected_n123):
+            raise ValueError(
+                f"supercell VR N123={supclVR.n123} must equal "
+                f"bulk N123 * supercell size={expected_n123}; "
+                "call inspect_ingredient first"
+            )
     suuuupclVR = bulkVR * target_size
 
     # @jit(nopython=True)

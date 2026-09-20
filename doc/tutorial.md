@@ -11,7 +11,7 @@
 准备 bulk SCF 计算的输入文件, 进行自洽计算.
 
 `etot.input` considerations:
-1. `N123`: 计算输出势场文件 `OUT.VR` 实际上存储了一个实空间3维离散网格, 网格数由 晶格常数, `Ecut` 和并行参数 共同影响. 为了后续 patch 过程中网格匹配, 我非常建议在这里显式地设置 `N123`. 你可以看看[这篇笔记](./Ecut_n123_AL.md)进一步了解晶格常数, `Ecut2` 和 `N123` 的关系. 
+1. `N123`: 计算输出势场文件 `OUT.VR` 实际上存储了一个实空间3维离散网格, 网格数由晶格常数、`ECUT2` 和并行参数共同影响. bulk 与 supercell 的网格按晶格倍数换算后, 如果每个方向的网格间距偏差不超过 5%, potpatch 会将 supercell 势场按周期傅里叶重采样到匹配的网格, 再进行边界对齐与 patch. 超过此范围时程序会报警告并停止; 请检查输入计算或显式设置 `N123`. 你可以看看[这篇笔记](./Ecut_n123_AL.md)进一步了解晶格常数, `Ecut2` 和 `N123` 的关系.
 2. `XCFUNCTIONAL`: 建议采用 `XCFUNCTIONAL = LDA` , PBE泛函会让势场出现小锯齿, 这不利于potentail patch. 相应的, 赝势也建议用 LDA 赝势.
 3. `CONVERGENCE`: 非常建议设置 `CONVERGENCE=DIFFICULT`, 这样生成的势场在[康老师文章][kang] Fig3 检查中符合得更好. 
 4. `OUT.VATOM`: 建议打开 `OUT.VATOM`, 这是一会儿 (调整赝势环节) 要用到的米奇妙妙工具. 你可以把它当作效仿绘制[康老师文章][kang] Fig.3 的数据点来源. 
