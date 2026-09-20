@@ -1,5 +1,6 @@
-test/
-test*.py
+/test/
+/test.py/
+/scratch/
 
 doc/note.md
 doc/_*
