@@ -11,7 +11,7 @@
 准备 bulk SCF 计算的输入文件, 进行自洽计算.
 
 `etot.input` considerations:
-1. `N123`: 计算输出势场文件 `OUT.VR` 实际上存储了一个实空间3维离散网格, 网格数由晶格常数、`ECUT2` 和并行参数共同影响. bulk 与 supercell 的网格按晶格倍数换算后, 如果每个方向的网格间距偏差不超过 5%, potpatch 会将 supercell 势场按周期傅里叶重采样到匹配的网格, 再进行边界对齐与 patch. 超过此范围时程序会报警告并停止; 请检查输入计算或显式设置 `N123`. 你可以看看[这篇笔记](./Ecut_n123_AL.md)进一步了解晶格常数, `Ecut2` 和 `N123` 的关系.
+1. `N123` (out of date since v0.3.0): 计算输出势场文件 `OUT.VR` 实际上存储了一个实空间3维离散网格, 网格数由晶格常数、`ECUT2` 和并行参数共同影响. bulk 与 supercell 的网格按晶格倍数换算后, 如果每个方向的网格间距偏差不超过 5%, potpatch 会将 supercell 势场按周期傅里叶重采样到匹配的网格, 再进行边界对齐与 patch. 超过此范围时程序会报警告并停止; 请检查输入计算或显式设置 `N123`. 你可以看看[这篇笔记](./Ecut_n123_AL.md)进一步了解晶格常数, `Ecut2` 和 `N123` 的关系.
 2. `XCFUNCTIONAL`: 建议采用 `XCFUNCTIONAL = LDA` , PBE泛函会让势场出现小锯齿, 这不利于potentail patch. 相应的, 赝势也建议用 LDA 赝势.
 3. `CONVERGENCE`: 非常建议设置 `CONVERGENCE=DIFFICULT`, 这样生成的势场在[康老师文章][kang] Fig3 检查中符合得更好. 
 4. `OUT.VATOM`: 建议打开 `OUT.VATOM`, 这是一会儿 (调整赝势环节) 要用到的米奇妙妙工具. 你可以把它当作效仿绘制[康老师文章][kang] Fig.3 的数据点来源. 
@@ -30,7 +30,7 @@
 将 `[0, 0, 0]` (最近) 位置处的原子换成杂质原子. `potpatch` 程序假设杂质原子位于 `[0, 0, 0]` 进行 patch. 如果想要掺杂的原子位置不在 `[0, 0, 0]`, 可以使用 `potpatch shift` 子程序对原子位置进行平移. 
 
 `etot.input` considerations:
-1. `N123`, `Ecut`, `Ecut2`: 此阶段对这些参数没有要求. 
+1. `Ecut`, `Ecut2`: 此阶段对这些参数没有要求. 但是作为一个 "严格" 的弛豫计算, 建议 `Ecut2`=4 `Ecut`. 
 2. `IN.PSP`: 相较于bulk计算, 这里引入了新的杂质的赝势
 3. `MP_N123`: 超胞可以在倒空间少采样几个点, 这个例子中用单Gamma点已经足够了
 
@@ -39,9 +39,9 @@
 把 RELAX 的结果 `final.config` 当作本任务的 `atom.config`
 
 supercell的自洽和bulk的自洽在 `etot.input` 没有很大的区别
-1. `N123`: 因为这个例子使用  4×4×4 超胞, 相应的 `N123 = 128 128 128`
+1. `N123` (out of date since v0.3.0): 因为这个例子使用  4×4×4 超胞, 相应的 `N123 = 128 128 128`
 2. `IN.PSP`, `NUM_ELECTRON`, `MP_N123`: 和上一步弛豫一样
-3. `NUM_ELECTRON`: 让体系是 close shell 会让结果更准 (这通常会导致体系带电). 从杂质体系可能的带电状态中选择一个 closed shell 的价电子数作为 `NUM_ELECTRON` 的数值. 在这个例子中, 原本没有缺陷的 4×4×4 supercell 有2048个价电子, 替换一个 Si 原子为 Al 原子后中性体系有 2047 个价电子, acceptor 获得一个电子变成 close shell 后有 2048 个电子, 所以应该设置 `NUM_ELECTRON = 2048`. 
+3. `NUM_ELECTRON`: 让体系是 close shell 会带来一些好处. 从杂质体系可能的带电状态中选择一个 closed shell 的价电子数作为 `NUM_ELECTRON` 的数值. 在这个例子中, 原本没有缺陷的 4×4×4 supercell 有2048个价电子, 替换一个 Si 原子为 Al 原子后中性体系有 2055 个价电子, acceptor 获得一个电子变成 close shell 后有 2056 个电子, 所以应该设置 `NUM_ELECTRON = 2056`. 
 
 
 
@@ -58,7 +58,8 @@ HSE 相对 LDA 的计算, 只需要把 `XCFUNCTIONAL` 改成 `XCFUNCTIONAL = HSE
 这个计算设置基于普通的 nonSCF job, 同样需要准备 `atom.config` 和 `IN.VR`, 这是 bulk 计算, 直接从 LDA bulk SCF 当中复制过来就行了. 
 
 `etot.input` 基于普通的 `NONSCF` job :
-1. `N123`: 为了确保 PWmat 不出错, 这里的 `N123` 需要使用与SCF时同样的设置. 
+1. `N123`: 为了确保 PWmat 不报错, 这里的 `N123` 需要使用与SCF时同样的设置. 
+   1. (报错通常发生在不同版本的 PWmat 之间, 比如自洽阶段和当前非自洽阶段使用不同版本 PWmat. 对于现在的 bulk, 不太可能报错; 但在后面的 suuuupercell 计算中, 有很大风险. )
 2. `IN.VR` 和 `IN.KPT`: 需要额外指定. (这个 tutorial 出于通用性的考虑使用 `IN.KPT` 文件, 在 `etot.input` 中正确设置 `MP_N123` 以替换 `IN.KPT` 也可以.)
 3. `OUT.WG`: 视情况可以关掉
 4. `IN.NONSCF`: 根据 Pwmat 文档要求, 需要设置成 `T`
@@ -98,7 +99,7 @@ Escan 的 `atom.config` 和 `IN.VR` 文件通过 `potpatch` 程序生成. 让我
 
 在 `potpatch` 运行过程中, 会有一些输出, 它们可以帮助你判断 potential patching 是否出错了. "standard deviation of diffs at the boundary" 通常只有几 meV, 如果它太大请小心, 考虑使用更大的 supercell 以及检查之前的计算是否含有错误. 
 
-当 suuuupercell 尺寸是 8a 时计算得到的 binding energy 的结果是 81.25 meV, 很接近[汪老师文章][wang]中的 80.1 meV, 我用两张 1080ti 花了 6 分钟完成计算. 大成功.
+当 suuuupercell 尺寸是 8a 时计算得到的 binding energy 的结果是 80.2 meV, 很接近[汪老师文章][wang]中的 80.1 meV. 大成功.
 
 
 ## 4.修正赝势
