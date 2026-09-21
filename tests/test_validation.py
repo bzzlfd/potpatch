@@ -5,7 +5,7 @@ from unittest.mock import patch
 
 import numpy as np
 
-from potpatch.objects import AtomConfig, Lattice, MaterialSystemInfo, VR
+from potpatch.objects import Atom, Lattice, MaterialSystemInfo, VR
 from potpatch.patch import inspect_ingredient
 from potpatch.validation import PATCH_REQUIRED_FIELDS
 
@@ -15,7 +15,7 @@ def lattice(scale=1.0):
 
 
 def atomconfig(scale=1.0):
-    return AtomConfig(
+    return Atom(
         natoms=1, lattice=lattice(scale), itypes=np.array([14]),
         positions=np.array([[0.0, 0.0, 0.0]]),
         moves=np.array([[1, 1, 1]]),
@@ -77,7 +77,7 @@ class MaterialValidationTests(unittest.TestCase):
     def test_constructor_lattices_do_not_share_mutable_arrays(self):
         common = lattice()
         info = MaterialSystemInfo(
-            lattice=common, atomconfig=AtomConfig(lattice=common),
+            lattice=common, atomconfig=Atom(lattice=common),
             vr=VR(lattice=common, mesh=np.zeros((2, 2, 2))),
         )
         info.vr.lattice.AL[0, 0] = 2.0

@@ -29,7 +29,7 @@
 ### objects
 `objects.py` 中定义了很多class, 它们中的大多数都和某个 PWmat 文件一一对应, 当使用其中的 `read` method 时, 更是尽力还原原著
 除此之外, 
-`MaterialSystemInfo` 是这些数据对象的集合。`VR` 和 `AtomConfig` 可以逐步构造，未提供的属性可以保持为 `None`。重复的数据由显式调用的 `MaterialSystemInfo.validate()` 检查；检查不修改对象。晶格来源仍记录在 `Lattice.fromwhere` 中。
+`MaterialSystemInfo` 是这些数据对象的集合。`VR` 和 `Atom` 可以逐步构造，未提供的属性可以保持为 `None`。重复的数据由显式调用的 `MaterialSystemInfo.validate()` 检查；检查不修改对象。晶格来源仍记录在 `Lattice.fromwhere` 中。
 
 **0.2.0 不兼容变更：**移除了 `lattice_check_trigger` 参数和 `__setattr__` 晶格联动。给 `info.lattice`、`info.vr.lattice` 或 `info.atomconfig.lattice` 赋值，只修改指定位置。需要确认一致性时主动调用 `info.validate()`；计算和写出入口也会执行相应检查。详细用法见 [数据检查](./data_validation.md)。
 
@@ -56,8 +56,10 @@ VR被设计成多种用法
 
 VR 定义了乘法, 它是为超胞准备的, 乘以一个包含三个整数的Sequence返回一个新的supercell VR
 
-#### `AtomConfig`
-atom.config 是一个文本文件, 
+#### `Atom`
+`Atom` 对应 PWmat 的 `IN.ATOM` 输入项所指向的晶体结构文件（通常名为 `atom.config`）。一个 `Atom` 对象保存整个体系的晶格、所有原子的种类、分数坐标和移动标记，并非单个原子。旧类名 `AtomConfig` 仍可导入，作为 `Atom` 的兼容别名；新代码建议使用 `Atom`。`MaterialSystemInfo.atomconfig` 和控制文件中的 `atomconfig` 键继续沿用原名。
+
+`atom.config` 是一个文本文件，
 在没集成进PWmat中的Escan版本里, AL是原子单位, 没有section title, 如(LATTICE, POSITION)
 有一个 `atoms_fmt` 参数, 它默认是 `PWmat`, 如果不是这个字符串不是严格的`PWmat`时会在读取/写入过程中使用旧版Escan的文件格式(这个代码设计是不是不合理)
 

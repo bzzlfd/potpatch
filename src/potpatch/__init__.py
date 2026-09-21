@@ -5,7 +5,7 @@ from potpatch.constant import BOHR, HA, EPSILON0
 from potpatch.datatype import (INTEGER, INTEGER_4, INTEGER_8, 
                                REAL, REAL_4, REAL_8)
 from potpatch.objects import (MaterialSystemInfo, 
-                              VR, AtomConfig, VATOM, EIGEN, 
+                              VR, Atom, AtomConfig, VATOM, EIGEN,
                               Lattice)
 from potpatch.validation import CheckResult, ValidationReport
 from potpatch.correction import gen_charge_correct, edge_match_correct

@@ -9,7 +9,7 @@ from numpy import prod, array, diag, zeros
 
 from potpatch.constant import BOHR, HA, EPSILON0
 from potpatch.objects import (Lattice, 
-                              VR, AtomConfig, VATOM, EIGEN, 
+                              VR, Atom, VATOM, EIGEN,
                               MaterialSystemInfo)
 from potpatch.correction import gen_charge_correct, edge_match_correct
 from potpatch.patch import (patch, patch_vr, patch_atom, patch_atom_v2,
@@ -169,7 +169,7 @@ def mksupcl(args):
     frozen_range    = args.frozen_range 
     outsider        = args.outsider
 
-    bulk_ac = AtomConfig(filename=input_)
+    bulk_ac = Atom(filename=input_)
     if output is None:
         output = f"atom.config_mksupcl_{bulk_ac.natoms*prod(size)}"
     
@@ -195,15 +195,15 @@ def shift(args):
     assert args.count == 1 or args.count == 2
     if args.count == 1:
         if bulk is not None:
-            ac    = AtomConfig(filename=bulk)
+            ac    = Atom(filename=bulk)
         if supcl is not None:
-            ac    = AtomConfig(filename=supcl)
+            ac    = Atom(filename=supcl)
         shift_oneAtomConfig(ac, shift)
         filename = join(getcwd(), basename(ac.filename))
         ac.write(filename + "_shift", comment=comment)
     elif args.count == 2:
-        bulk_ac   = AtomConfig(filename=bulk)
-        supcl_ac  = AtomConfig(filename=supcl)
+        bulk_ac   = Atom(filename=bulk)
+        supcl_ac  = Atom(filename=supcl)
         shift_twoAtomConfig(bulk_ac, supcl_ac, shift)
         filename = join(getcwd(), basename(bulk_ac.filename))
         bulk_ac.write(filename + "_shift", comment=comment)
@@ -212,8 +212,8 @@ def shift(args):
 
 
 def check_atompos(args):
-    ac_1 = AtomConfig(filename=args.ac_1)
-    ac_2 = AtomConfig(filename=args.ac_2)
+    ac_1 = Atom(filename=args.ac_1)
+    ac_2 = Atom(filename=args.ac_2)
     whichbulk = which_lattice_is_bulk(ac_1.lattice, ac_2.lattice)
     if whichbulk == 1:
         bulk, supcl = ac_1, ac_2

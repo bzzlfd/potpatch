@@ -6,14 +6,14 @@ from itertools import product
 import numpy as np
 
 from potpatch.datatype import INTEGER, REAL_8
-from potpatch.objects import AtomConfig
+from potpatch.objects import Atom
 from potpatch.supercell import (make_supercell, closed_to_edge, 
                                 infer_supercell_size)
 from potpatch.utils import timing
 
 
 @timing()
-def check_atompos_consistency(bulk: AtomConfig, supcl: AtomConfig, 
+def check_atompos_consistency(bulk: Atom, supcl: Atom,
                               tol: float = 1e-6, 
                               frozen_range: float = np.inf,  # in angstrom, close to edge
                               supcl_size: tuple = None,  
@@ -40,7 +40,7 @@ def check_atompos_consistency(bulk: AtomConfig, supcl: AtomConfig,
 
 
 @timing()
-def bulk_order_mapto_supcl(bulk: AtomConfig, supcl: AtomConfig, 
+def bulk_order_mapto_supcl(bulk: Atom, supcl: Atom,
                            warn_tol: float = 1e-6):
     """
     return a list of indices that map the closest positions of bulk 

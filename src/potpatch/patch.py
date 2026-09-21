@@ -4,7 +4,7 @@ from textwrap import indent, dedent
 import numpy as np
 from numba import jit, guvectorize
 
-from potpatch.objects import Lattice, VR, AtomConfig, MaterialSystemInfo
+from potpatch.objects import Lattice, VR, Atom, MaterialSystemInfo
 from potpatch.supercell import (make_supercell, modify_supercell, closed_to_edge,
                                 infer_supercell_size)
 from potpatch.atompos_coin import check_atompos_consistency
@@ -172,8 +172,8 @@ def patch(supclInfo: MaterialSystemInfo, bulkInfo: MaterialSystemInfo,
 
 # 这个代码只适合偶数 target_size
 
-def patch_atom(supclAtom: AtomConfig, bulkAtom: AtomConfig,
-               supcl_size, target_size) -> AtomConfig:
+def patch_atom(supclAtom: Atom, bulkAtom: Atom,
+               supcl_size, target_size) -> Atom:
     """
     resolution is bulk, supcl_size should be even numbers
     """
@@ -183,7 +183,7 @@ def patch_atom(supclAtom: AtomConfig, bulkAtom: AtomConfig,
 
     indx = supclAtom.positions >= 0.5
     supclAtom.positions[indx] -= 1.0
-    # code prototype from AtomConfig.__mul__
+    # code prototype from Atom.__mul__
     nrepeat         = np.prod(target_size)
     natoms          = bulkAtom.natoms * nrepeat
     lattice         = bulkAtom.lattice * target_size
@@ -211,7 +211,7 @@ def patch_atom(supclAtom: AtomConfig, bulkAtom: AtomConfig,
                     cnt += 1
 
     atoms_position /= target_size
-    rtac = AtomConfig(natoms=natoms, lattice=lattice,
+    rtac = Atom(natoms=natoms, lattice=lattice,
                       itypes=atoms_itype, positions=atoms_position,
                       moves=atoms_move)
     rtac.revise_atomsposition()
@@ -221,8 +221,8 @@ def patch_atom(supclAtom: AtomConfig, bulkAtom: AtomConfig,
 # TODO 如果奇数超胞, 奇数扩胞, 会出现什么问题吗
 # TODO 如果是奇数网格怎么办
 @timing()
-def patch_atom_v2(supclAtom: AtomConfig, bulkAtom: AtomConfig,
-                  supcl_size, target_size) -> AtomConfig:
+def patch_atom_v2(supclAtom: Atom, bulkAtom: Atom,
+                  supcl_size, target_size) -> Atom:
     """
     another implement of patch_atom, break the bulkcell-resolution.
     but hidden issues may arise.
@@ -235,7 +235,7 @@ def patch_atom_v2(supclAtom: AtomConfig, bulkAtom: AtomConfig,
     assert len(target_size) == 3
 
     supclAtom.positions[supclAtom.positions >= 0.5] -= 1.0
-    # code prototype from AtomConfig.__mul__
+    # code prototype from Atom.__mul__
     nrepeat         = np.prod(target_size)
     natoms          = bulkAtom.natoms * nrepeat
     lattice         = bulkAtom.lattice * target_size
@@ -277,7 +277,7 @@ def patch_atom_v2(supclAtom: AtomConfig, bulkAtom: AtomConfig,
         "some thing wrong when setting atoms at patch_atom_v2"
 
     atoms_position /= target_size
-    rtac = AtomConfig(natoms=natoms, lattice=lattice,
+    rtac = Atom(natoms=natoms, lattice=lattice,
                       itypes=atoms_itype, positions=atoms_position,
                       moves=atoms_move)
     rtac.revise_atomsposition()

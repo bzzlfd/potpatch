@@ -10,7 +10,7 @@ from numba import jit, guvectorize, prange
 from potpatch.utils import simpson, timing, NameTuple, revise_epsilon
 from potpatch.constant import HA, EPSILON0, BOHR
 from potpatch.datatype import REAL_8
-from potpatch.objects import Lattice, VR, AtomConfig, MaterialSystemInfo
+from potpatch.objects import Lattice, VR, Atom, MaterialSystemInfo
 from potpatch.utils import log
 
 

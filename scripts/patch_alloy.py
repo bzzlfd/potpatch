@@ -6,7 +6,7 @@ from pathlib import Path
 
 from numpy import ndarray, array, zeros, diag, prod, abs, round
 
-from potpatch import (AtomConfig, VR, MaterialSystemInfo,
+from potpatch import (Atom, VR, MaterialSystemInfo,
                       gen_charge_correct, check_atompos_consistency, 
                       edge_match_correct, patch, 
                       diff_vatom, write_diffvatom,

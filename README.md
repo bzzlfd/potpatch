@@ -57,6 +57,11 @@ there are some suggestions:
 The role played by this program is shown in the diagram below.
 ![potpatch diagram](doc/images/potpatch.drawio.png)
 
+In the Python API, `Atom` represents the full crystal structure in the file
+selected by PWmat's `IN.ATOM` input (usually `atom.config`): its lattice and
+all atom types, positions, and movement flags. It is not a single atom.
+`AtomConfig` remains available as an alias for existing code.
+
 [Here](doc/tutorial.md) is a tutorial that walks you through an example, explaining the calculation process and considerations.
 This tutorial focuses on the usage of the program. If you feel confused while reading, you can refer to [References](#references) for understanding what we are doing.
 

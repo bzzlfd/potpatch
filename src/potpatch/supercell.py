@@ -4,7 +4,7 @@ from warnings import warn
 import numpy as np
 import numpy.typing as npt
 
-from potpatch.objects import AtomConfig, Lattice
+from potpatch.objects import Atom, Lattice
 from potpatch.datatype import REAL_8, INTEGER
 
 
@@ -46,16 +46,16 @@ def infer_supercell_size(bulk: Lattice, supcl: Lattice):
     return mag, mag_f
 
 
-def make_supercell(bulkAtom: AtomConfig, m123) -> AtomConfig:
+def make_supercell(bulkAtom: Atom, m123) -> Atom:
     "``m123`` should be a tuple contains 3 integer numbers, e.g. ``(4,4,4)``"
     supclAtom = bulkAtom * m123
     supclAtom.revise_atomsposition()
     return supclAtom
 
 
-def modify_supercell(supclAtom: AtomConfig,
+def modify_supercell(supclAtom: Atom,
                      frozen_edge_width=1.0, 
-                     mv2outsider=None) -> AtomConfig:
+                     mv2outsider=None) -> Atom:
     """
     for supercell RELAX job: freeze atoms whose positions are closed to
     the pathcing edge(interface between supercell and bulk)

@@ -2,7 +2,7 @@ import numpy as np
 from numpy import abs, exp, pi
 from numba import jit, guvectorize
 
-from potpatch.objects import MaterialSystemInfo, AtomConfig, VR, Lattice
+from potpatch.objects import MaterialSystemInfo, Atom, VR, Lattice
 from potpatch.supercell import infer_supercell_size
 from potpatch.utils import timing, gen_counter
 from potpatch.datatype import INTEGER
@@ -10,7 +10,7 @@ from potpatch.datatype import INTEGER
 shift_operation_counter = gen_counter()
 
 
-def shift_oneAtomConfig(ac: AtomConfig, shift) -> None:
+def shift_oneAtomConfig(ac: Atom, shift) -> None:
     """
     shift *fractional* point `shift` to `(0, 0, 0)` 
     """
@@ -21,8 +21,8 @@ def shift_oneAtomConfig(ac: AtomConfig, shift) -> None:
     shift_atomconfig(ac, shift)
 
 
-def shift_twoAtomConfig(bulk_ac: AtomConfig, 
-                        supcl_ac: AtomConfig, supcl_shift) -> None:
+def shift_twoAtomConfig(bulk_ac: Atom,
+                        supcl_ac: Atom, supcl_shift) -> None:
     """
     `bulk_shift` refer from `supcl_shift`, `supcl_ac` and `bulk_ac`
     
@@ -57,7 +57,7 @@ def shift_materialsystem(ms: MaterialSystemInfo, shift) -> None:
         ms.charge_pos = ms.charge_pos - np.array(shift)
 
 
-def shift_atomconfig(ac: AtomConfig, shift, revise_pos=True) -> None:
+def shift_atomconfig(ac: Atom, shift, revise_pos=True) -> None:
     """
     shift *fractional* point `shift` to `(0, 0, 0)` 
     """

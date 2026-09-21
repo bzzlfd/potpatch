@@ -1,4 +1,4 @@
-from potpatch import VR, AtomConfig
+from potpatch import VR, Atom
 
 
 def main():
@@ -12,7 +12,7 @@ def main():
     bulkVR.read(filename=input_vr, fmt="PWmat")
     bulkVR.write(filename=output_vr, fmt="Escan", nnodes=None)
     
-    bulkVR = AtomConfig()
+    bulkVR = Atom()
     bulkVR.read(filename=input_atom, fmt="PWmat")
     bulkVR.write(filename=output_atom, fmt="Escan")
     

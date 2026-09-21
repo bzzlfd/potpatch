@@ -2,7 +2,7 @@ import os
 
 import numpy as np
 
-from potpatch import VATOM, AtomConfig, Lattice
+from potpatch import VATOM, Atom, Lattice
 from potpatch.atompos_coin import bulk_order_mapto_supcl
 from potpatch.supercell import infer_supercell_size
 from potpatch.diff_vatom import write_diffvatom
@@ -12,8 +12,8 @@ def read_vatom(bulk_dir, supcl_dir):
     # read atom.config  for `lattice` and `order`
     bulk_ac = os.path.join(bulk_dir, "atom.config")
     supcl_ac = os.path.join(supcl_dir, "atom.config")
-    bulk_ac = AtomConfig().read(bulk_ac)
-    supcl_ac = AtomConfig().read(supcl_ac)
+    bulk_ac = Atom().read(bulk_ac)
+    supcl_ac = Atom().read(supcl_ac)
     bulk_lattice = bulk_ac.lattice
     supcl_lattice = supcl_ac.lattice
 

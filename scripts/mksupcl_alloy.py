@@ -5,7 +5,7 @@ from pathlib import Path
 
 from numpy import prod, array, zeros
 
-from potpatch import (AtomConfig, modify_supercell)
+from potpatch import (Atom, modify_supercell)
 
 
 def in_imbox(pos, planl, planr):
@@ -15,10 +15,10 @@ def in_imbox(pos, planl, planr):
         return False
 
 
-def make_supercell(bulkAtom: AtomConfig, 
+def make_supercell(bulkAtom: Atom,
                    m123: Tuple[Fraction, Fraction, Fraction],
                    vr_mesh_n123 = None, 
-                   ) -> AtomConfig:
+                   ) -> Atom:
     m123 = array(m123, dtype=Fraction)
     fm123 = m123.astype(float)
     natoms = bulkAtom.natoms * prod(m123)
@@ -44,7 +44,7 @@ def make_supercell(bulkAtom: AtomConfig,
     assert cnt == natoms, f"cnt({cnt}) should equal natoms({natoms})"
 
     atoms_position /= fm123
-    supclAtom = AtomConfig(natoms=natoms, lattice=lattice, 
+    supclAtom = Atom(natoms=natoms, lattice=lattice,
                            itypes=atoms_itype, positions=atoms_position, 
                            moves=atoms_move)
     supclAtom.revise_atomsposition()
@@ -58,7 +58,7 @@ if __name__ == '__main__':
     supcl = ""
     debug = 56  # set frozen atoms to 56(Ba)
 
-    bulkAC = AtomConfig(filename=join(rootdir, bulk))
+    bulkAC = Atom(filename=join(rootdir, bulk))
     supclAC = make_supercell(
                         bulkAtom=bulkAC, 
                         m123=(Fraction("1/4"), Fraction(1, 4), Fraction(0.25)))

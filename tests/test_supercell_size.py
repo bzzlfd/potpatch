@@ -3,7 +3,7 @@ import warnings
 
 import numpy as np
 
-from potpatch.objects import AtomConfig, Lattice, MaterialSystemInfo, VR
+from potpatch.objects import Atom, Lattice, MaterialSystemInfo, VR
 from potpatch.patch import (inspect_ingredient, patch_vr,
                             _resample_periodic_mesh)
 from scripts.patch_alloy import inspect_ingredient as inspect_alloy_ingredient
@@ -13,7 +13,7 @@ class TestSupercellSizeInference(unittest.TestCase):
     def make_info(self, lattice_matrix, mesh_shape):
         lattice = Lattice(np.array(lattice_matrix, dtype=float), "angstrom")
         return MaterialSystemInfo(
-            atomconfig=AtomConfig(lattice=lattice),
+            atomconfig=Atom(lattice=lattice),
             vr=VR(lattice=lattice, mesh=np.zeros(mesh_shape)),
         )
 

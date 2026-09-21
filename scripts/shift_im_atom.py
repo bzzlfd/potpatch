@@ -2,7 +2,7 @@
 在 im_pos 推出前的临时办法
 """
 
-from potpatch import AtomConfig
+from potpatch import Atom
 import numpy as np
 
 
@@ -11,7 +11,7 @@ def main():
     output_ac   = ""
     im_pos      = np.array([0.0, 0.0, 0.0])
 
-    bulkAC = AtomConfig()
+    bulkAC = Atom()
     bulkAC.read(filename=bulk_ac, fmt="PWmat")
     bulkAC.positions -= im_pos
     bulkAC.revise_atomsposition()

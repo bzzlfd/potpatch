@@ -18,7 +18,7 @@ from numpy.linalg import norm, inv, det, eigvalsh
 from numpy.typing import NDArray
 from numba import jit, guvectorize, prange
 
-from potpatch.objects import Lattice, VR, AtomConfig, VATOM, MaterialSystemInfo
+from potpatch.objects import Lattice, VR, Atom, VATOM, MaterialSystemInfo
 from potpatch.atompos_coin import bulk_order_mapto_supcl
 from potpatch.supercell import infer_supercell_size
 from potpatch.datatype import INTEGER, INTEGER_8
@@ -155,7 +155,7 @@ def gaussian_integrate(AL, mesh: np.ndarray, window,
 
 
 def write_diffvatom(filename: str, 
-                    bulk: AtomConfig | VATOM, supcl: AtomConfig | VATOM, 
+                    bulk: Atom | VATOM, supcl: Atom | VATOM,
                     order, epsilon: NDArray, charge, 
                     r: NDArray, ξ: NDArray, 
                     dv_bulk: NDArray, dv_supcl0: NDArray, dv_supcl: NDArray):

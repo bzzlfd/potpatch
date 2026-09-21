@@ -283,9 +283,12 @@ class VR():
         return self
 
 
-class AtomConfig():
-    """
-    atom.config
+class Atom():
+    """Crystal structure stored in a PWmat ``IN.ATOM`` / ``atom.config`` file.
+
+    One instance describes the lattice and all atoms in a material system,
+    including their types, fractional positions, and movement flags. It does
+    not represent one individual atom.
     """
     registered_fmt = ["PWmat", "Escan"]
     fmt2unit = dict(zip(registered_fmt, ["angstrom", "atomic unit"]))
@@ -397,7 +400,7 @@ class AtomConfig():
                     io.write("%6d %20.17f %20.17f %20.17f    0 1\n" % 
                              (self.itypes[i], *self.positions[i]))
 
-    def __mul__(self, magnification) -> 'AtomConfig' :
+    def __mul__(self, magnification) -> 'Atom' :
         """
         is used to make supercell
         self * magnification
@@ -419,14 +422,14 @@ class AtomConfig():
                     indx = self.natoms * (i*magnification[1]*magnification[2] + j*magnification[2] + k)
                     atoms_position[indx:indx+self.natoms] += np.array([i, j, k])
         atoms_position /= magnification
-        return AtomConfig(natoms=natoms, lattice=lattice,
+        return Atom(natoms=natoms, lattice=lattice,
                           itypes=atoms_itype, positions=atoms_position, moves=atoms_move,
                           atoms_fmt=self.atoms_fmt)  # TODO 这个格式重要吗 (VR也是)
         
-    def __rmul__(self, magnification) -> 'AtomConfig' :
+    def __rmul__(self, magnification) -> 'Atom' :
         return self.__mul__(magnification)
 
-    def __imul__(self, magnification) -> 'AtomConfig' :
+    def __imul__(self, magnification) -> 'Atom' :
         atomconfig = self.__mul__(magnification)
         self.natoms         = atomconfig.natoms
         self.lattice        = atomconfig.lattice
@@ -434,6 +437,10 @@ class AtomConfig():
         self.positions = atomconfig.positions
         self.moves     = atomconfig.moves
         return self
+
+
+# Retain the previous public name for existing Python callers.
+AtomConfig = Atom
 
 
 class VATOM():
@@ -541,7 +548,7 @@ class MaterialSystemInfo():
     """
     def __init__(self, 
                  lattice: Lattice = None, 
-                 atomconfig: AtomConfig | None = None,  atoms_filename: str | None = None, atoms_fmt: str = "PWmat",
+                 atomconfig: Atom | None = None,  atoms_filename: str | None = None, atoms_fmt: str = "PWmat",
                  vr: VR | None = None,                  vr_filename:    str | None = None, vr_fmt: str = "PWmat", 
                  vatom: VATOM | None = None,            vatom_filename: str | None = None, 
                  eigen: EIGEN | None = None,            eigen_filename: str | None = None, 
@@ -563,7 +570,7 @@ class MaterialSystemInfo():
         self.epsilon    = epsilon
 
         self.vr         = vr if vr is not None else VR()
-        self.atomconfig = atomconfig if atomconfig is not None else AtomConfig()
+        self.atomconfig = atomconfig if atomconfig is not None else Atom()
         self.vatom      = vatom if vatom is not None else VATOM()
         self.eigen      = eigen if eigen is not None else EIGEN()
         
