@@ -3,12 +3,12 @@
 [potpatch]
 
 [potpatch.bulk]
-basedir       = "./1.lda/1.bulk/2.scf/"  # It's a path relative to this file.
+basedir       = "../1.lda/1.bulk/2.scf/"  # It's a path relative to this file.
 atomconfig    = "atom.config"
 vr            = "OUT.VR"
 
 [potpatch.supercell]
-basedir       = "./1.lda/2.supercell/2.scf/"
+basedir       = "../1.lda/2.supercell/2.scf/"
 atomconfig    = "atom.config"
 vr            = "OUT.VR"
 charge        = 1  # (setting NUM_ELECTRON) - (default NUM_ELECTRON)
@@ -25,10 +25,11 @@ epsilon = 12.34
 size          = [8, 8, 8]
 
 [potpatch.output]
-basedir       = "./3.escan/2.supercell_08a/" # It's a path relative to this file.
+basedir       = "./2.supercell_08a" # It's a path relative to this file.
 mkdir         = true
 atomconfig    = "atom.config"
 vr            = "IN.VR"
 
 # [potpatch.check.diff_vatom]
 # sigma = 1
+

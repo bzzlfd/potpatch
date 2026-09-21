@@ -1,15 +1,13 @@
 4  1
 JOB = RELAX
 RELAX_DETAIL = 1, 200, 0.01, 0, 0, -0.001
-IN.PSP1 = vwr.Si.UPF
-IN.PSP2 = vwr.Al.UPF
+IN.PSP1 = ../../../Si.SG15.LDA.UPF
+IN.PSP2 = ../../../Al.SG15.LDA.UPF
 IN.ATOM = atom.config
 MP_N123 = 1 1 1 0 0 0
 XCFUNCTIONAL = LDA
-Ecut = 44
-Ecut2 = 176
+Ecut = 50
+Ecut2 = 200
 
 OUT.WG = F
-NUM_ELECTRON = 2048
-CONVERGENCE=DIFFICULT
-
+NUM_ELECTRON = 2056 ! Si:z_val=4, Al:z_val=11; 511*4 + 1*11 + 1
