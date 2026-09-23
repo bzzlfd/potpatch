@@ -194,9 +194,27 @@ class VR():
         self.filename = os.path.abspath(filename)
         self.vr_fmt = fmt
         with open(filename, "br") as io:
-            n1, n2, n3, nnodes = read_fortran_binary_block(io, INTEGER_IN)
+            meta = read_fortran_binary_block(io, INTEGER_IN)
+            if len(meta) == 4:
+                n1, n2, n3, nnodes = meta
+                nstate = 1
+            elif len(meta) == 5:
+                # some PWmat versions append a 5th integer(`nstate`) in the
+                # first record, potpatch doesn't use it
+                n1, n2, n3, nnodes, nstate = meta
+            else:
+                raise ValueError(f"""
+                    the first record of {filename} contains {len(meta)} integers,
+                    expected 4 (n1, n2, n3, nnodes) or 5 (n1, n2, n3, nnodes, nstate)
+                    """)
             assert (n1*n2*n3) % nnodes == 0, "`n1*n2*n3` is not divisible by `nnodes`"
             self.nnodes = nnodes
+            self.nstate = nstate
+            if nstate != 1:
+                warnings.warn(f"""
+                    {filename} contains {nstate} states,
+                    potpatch reads only the first one
+                    """)
 
             AL = read_fortran_binary_block(io, REAL_8)
             AL = np.reshape(AL, (3, 3))
